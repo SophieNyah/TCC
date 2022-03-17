@@ -50,3 +50,12 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Outros arquivos/diretórios
+tcc.code-workspace
+*.txt
+*.tab.hpp
+*.tab.cpp
+*.tab.h
+*.tab.c
+*.yy.c
