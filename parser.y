@@ -63,30 +63,30 @@ pattern: L_SBRACKET pattern_rule R_SBRACKET {}
 ;
 
 pattern_rule: pattern_rule SEMI_COLON terminal DL_L_REGISTER register DL_R_REGISTER {}
-            | terminal DL_L_REGISTER register DL_R_REGISTER {}
+            | terminal DL_L_REGISTER register DL_R_REGISTER                         {}
 ;
 
 register: register COMMA register_name {}
-        | register_name {}
+        | register_name                {}
 ;
 
 register_name: IDENTIFIER {}
 ;
 
 tree: terminal L_BRACKET action tree_list R_BRACKET {}
-    | terminal L_BRACKET tree_list R_BRACKET {}
-    | terminal {}
-    | non_terminal {}
+    | terminal                                      {}
+    | non_terminal                                  {}
 ;
 
 tree_list: tree_list COMMA child {}
-         | child {}
+         | child                 {}
 ;
 child: tree {}
-     | any {}
+     | any  {}
 ;
 /* action: DL_L_CBRACKET  DL_R_CBRACKET {} */
 action: CPP_CODE {}
+      | %empty   {}
 ;
 cost: CPP_CODE {}
 ;
@@ -108,8 +108,13 @@ int main()
 {
 	/* in_file = stdin;
 	yyparse(); */
+    yyscan_t scanner;
+    yylex_init(&scanner);
+    generator::Parser parser{ scanner };
+    parser.parse();
+    yylex_destroy(scanner);
 
-    std::cout << "Rodou\n";
+    /* std::cout << "Rodou\n"; */
 
     return 0;
 }
