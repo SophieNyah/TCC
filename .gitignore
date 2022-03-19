@@ -53,9 +53,13 @@ dkms.conf
 
 # Outros arquivos/diretórios
 tcc.code-workspace
-*.txt
 *.tab.hpp
 *.tab.cpp
 *.tab.h
 *.tab.c
 *.yy.c
+parser.cpp
+parser.hpp
+scanner.cpp
+scanner.hpp
+generator

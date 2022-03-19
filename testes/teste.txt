@@ -1,0 +1,1 @@
+$! regra $% [ADD $[regA, regB$]] retorno <- plus(${ int main(){int a,b=3; int c=b+2;} $} regA, regB) $% ${ return 3; $} $!
