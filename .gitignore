@@ -63,3 +63,4 @@ parser.hpp
 scanner.cpp
 scanner.hpp
 generator
+tests/grammar_outputs/
