@@ -1,7 +1,7 @@
 FLEX=flex
 BISON=bison
 CC=g++
-# FLAGS=-std=c99
+FLAGS=-std=c++11
 
 PROGRAMA = generator
 LEXICO = lexer.l

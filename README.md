@@ -4,6 +4,12 @@ Universidade Estadual de Londrina, 2021
 Aluna: Sophie Nascimento
 Orientador: Wesley Attrot
 
+# Requerimentos para rodar o programa
+ - make
+ - bison 3.7.4
+ - flex  2.6.4
+ - c++11
+
 # Casos de Teste
 Para realizar os casos de teste padrões:
  - $ make
