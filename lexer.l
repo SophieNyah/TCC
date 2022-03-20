@@ -16,50 +16,67 @@ using namespace generator;
 %%
 
     /* Delimitadores */
-"$!" { std::cout << yytext << '\n'; return Parser::token::DL_RULE; }
-"$%" { std::cout << yytext << '\n'; return Parser::token::DL_PATTERN; }
-"$[" { std::cout << yytext << '\n'; return Parser::token::DL_L_REGISTER; }
-"$]" { std::cout << yytext << '\n'; return Parser::token::DL_R_REGISTER; }
+"%%" { /*std::cout << yytext << '\n';*/ return Parser::token::DL_INPUT; }
+"$!" { /*std::cout << yytext << '\n';*/ return Parser::token::DL_RULE; }
+"$%" { /*std::cout << yytext << '\n';*/ return Parser::token::DL_PATTERN; }
+"$[" { /*std::cout << yytext << '\n';*/ return Parser::token::DL_L_REGISTER; }
+"$]" { /*std::cout << yytext << '\n';*/ return Parser::token::DL_R_REGISTER; }
 
     /* Símbolos Miscelânia */
-"<-" { std::cout << yytext << '\n'; return Parser::token::TREE_PATTERN_SEPARATOR; }
-"("  { std::cout << yytext << '\n'; return Parser::token::L_BRACKET; }
-")"  { std::cout << yytext << '\n'; return Parser::token::R_BRACKET; }
-"["  { std::cout << yytext << '\n'; return Parser::token::L_SBRACKET; }
-"]"  { std::cout << yytext << '\n'; return Parser::token::R_SBRACKET; }
-";"  { std::cout << yytext << '\n'; return Parser::token::SEMI_COLON; }
-","  { std::cout << yytext << '\n'; return Parser::token::COMMA; }
+"<-" { /*std::cout << yytext << '\n';*/ return Parser::token::TREE_PATTERN_SEPARATOR; }
+"("  { /*std::cout << yytext << '\n';*/ return Parser::token::L_BRACKET; }
+")"  { /*std::cout << yytext << '\n';*/ return Parser::token::R_BRACKET; }
+"["  { /*std::cout << yytext << '\n';*/ return Parser::token::L_SBRACKET; }
+"]"  { /*std::cout << yytext << '\n';*/ return Parser::token::R_SBRACKET; }
+";"  { /*std::cout << yytext << '\n';*/ return Parser::token::SEMI_COLON; }
+","  { /*std::cout << yytext << '\n';*/ return Parser::token::COMMA; }
 
-"${" {
+    /* Símbolos declarativos */
+"%term"    { /*std::cout << yytext << '\n';*/ return Parser::token::NEW_TERM; }
+"%nonterm" { /*std::cout << yytext << '\n';*/ return Parser::token::NEW_NON_TERM; }
+
+    /* Código CPP */
+"{" {
     std::string text = yytext;
     int c;
+    int bracket_count = 0;
+
     while(true){
+
         c = yyinput(yyscanner);
         text += c;
-        if(c == '$') {
-            c = yyinput(yyscanner);
-            text += c;
-            if(c == '}') {
+
+        if (c == '}') {
+            if(bracket_count > 0) {
+                bracket_count--;
+            } else {
                 break;
             }
         }
+        
         if (c == EOF){
             REJECT;
             break;
         } 
         
-        /* Lida com o input */
+        if (c == '{') {
+            bracket_count++;
+        }
         
     }
-    std::cout << text << '\n';
+    /*std::cout << text << '\n';*/
     return Parser::token::CPP_CODE;
 }
-[_a-zA-Z]+ { std::cout << yytext << '\n'; return Parser::token::IDENTIFIER; }
+
+[0-9]+  { /*std::cout << yytext << '\n';*/ return Parser::token::INTEGER; }
+
+    /* Identificador */
+[_a-zA-Z][_a-zA-Z0-9]* { /*std::cout << yytext << '\n';*/ yylval->emplace<std::string>(yytext); return Parser::token::IDENTIFIER; }
 
 	/* misc */
 [ \r\t\f]	{  }
 [\n]		{  }
-<<EOF>>		{ std::cout << "END_OF_FILE" << '\n'; return Parser::token::END_OF_FILE; }
-.			{ std::cout << "UNIDENTIFIED" << '\n'; return Parser::token::UNIDENTIFIED; }
+<<EOF>>		{ /*std::cout << "END_OF_FILE" << '\n';*/ return Parser::token::END_OF_FILE; }
+.			{ /*std::cout << "UNIDENTIFIED" << '\n';*/ return Parser::token::UNIDENTIFIED; }
 
 %%

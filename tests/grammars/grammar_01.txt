@@ -1,1 +1,17 @@
-$! regra $% [ADD $[regA, regB$]] retorno <- plus(${ int main(){int a,b=3; int c=b+2;} $} regA, regB) $% ${ return 3; $} $!
+
+%term NONNONNON
+%term aoba
+%nonterm hewooUWU
+%term abobra
+
+%%
+
+$! regra $% [ADD $[regA, regB$]] 3 <- plus({ int main(){int a,b=3; int c=b+2;} } regA, regB) $% { return 3; } $!
+
+%%
+
+{
+
+int main essa certamente eh uma funcao {} {{}}
+
+}
