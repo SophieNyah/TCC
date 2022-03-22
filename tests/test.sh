@@ -22,7 +22,9 @@ for grammar in $grammars;
 do
     if [ $print_to_terminal = true ];
     then
-        echo `./$generator < $input_dir/$grammar`
+        echo -e "Running $grammar:"
+        echo -e `./$generator < $input_dir/$grammar`
+        echo -e ""
     else
         `./$generator < $input_dir/$grammar > $output_dir/$grammar`
     fi

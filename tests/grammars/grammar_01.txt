@@ -3,10 +3,11 @@
 %term aoba
 %nonterm hewooUWU
 %term abobra
+%term ADD
 
 %%
 
-$! regra $% [ADD $[regA, regB$]] 3 <- plus({ int main(){int a,b=3; int c=b+2;} } regA, regB) $% { return 3; } $!
+$! regra $% [ADD $[regA, regB$]] 3 <- aoba({ int main(){int a,b=3; int c=b+2;} } ADD, abobra) $% { return 3; } $!
 
 %%
 
