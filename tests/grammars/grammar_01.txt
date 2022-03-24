@@ -1,18 +1,17 @@
 
-%term NONNONNON
-%term aoba
-%nonterm hewooUWU
-%term abobra
 %term ADD
+%nonterm mais
 
 %%
 
-$! regra $% [ADD $[regA, regB$]] 3 <- aoba({ int main(){int a,b=3; int c=b+2;} } ADD, abobra) $% { return 3; } $!
+$! regra $% [ADD $[regA, regB, regC$]] 3 <- mais({ int main(){int a,b=3; int c=b+2;} } armoss, moi) $% { return 3; } $!
 
 %%
 
 {
 
-int main essa certamente eh uma funcao {} {{}}
+int main(int argc, char** argv){
+    return 0;
+}
 
 }

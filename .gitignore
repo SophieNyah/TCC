@@ -64,3 +64,4 @@ scanner.cpp
 scanner.hpp
 generator
 tests/grammar_outputs/
+location.hh

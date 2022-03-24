@@ -1,7 +1,7 @@
 FLEX=flex
 BISON=bison
 CC=g++
-FLAGS=-std=c++11
+FLAGS=-std=c++17
 
 PROGRAMA = generator
 LEXICO = lexer.l
@@ -18,6 +18,7 @@ clean:
 	rm -f parser.hpp
 	rm -f scanner.cpp
 	rm -f scanner.hpp
+	rm -f location.hh
 	rm -f *.o
 	rm -f *.exe
 	rm -f generator
