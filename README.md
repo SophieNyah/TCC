@@ -8,7 +8,7 @@ Orientador: Wesley Attrot
  - make
  - bison 3.7.4
  - flex  2.6.4
- - c++17
+ - c++17 (utilizado g++ 7.5.0)
 
 # Casos de Teste
 Para realizar os casos de teste padrões:

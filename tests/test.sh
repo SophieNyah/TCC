@@ -15,17 +15,19 @@ base_dir=`dirname "$0"`
 input_dir="$base_dir/grammars"
 grammars=`ls $input_dir`
 
-generator="$base_dir/../generator"
+generator="$base_dir/../output/generator"
 output_dir="$base_dir/grammar_outputs"
 
 for grammar in $grammars;
 do
+    echo -e "Running $grammar:"
+    
     if [ $print_to_terminal = true ];
     then
-        echo -e "Running $grammar:"
         echo -e `./$generator < $input_dir/$grammar`
-        echo -e ""
     else
         `./$generator < $input_dir/$grammar > $output_dir/$grammar`
     fi
+
+    echo -e ""
 done

@@ -21,14 +21,17 @@ class Tree{
 
             /* Construtores */
         Tree();
-        Tree(const string op);
+        Tree(const string& op);
+        Tree(const string& op, const code_t& action);
 
 
             /* Métodos */
-        bool insertChild(Tree);
+        void insertChild(Tree);
         
         optional<Tree> getChild(int index);
         vector<Tree>& getChildren();
+
+        friend ostream& operator<<(ostream&, Tree&);
 
 };
 

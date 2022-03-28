@@ -3,15 +3,20 @@
 
 #include<string>
 #include<vector>
+#include<iostream>
 #include"Tree.hpp"
 #include"types.hpp"
 
 using namespace std;
 
-typedef struct pattern{
+struct Pattern{
     string name;
     vector<string> variables;
-} Pattern;
+
+    public:
+        Pattern(string name, vector<string> variables);
+        friend ostream& operator<<(ostream& out, Pattern& s);
+};
 
 
 class Rule {
@@ -26,7 +31,10 @@ class Rule {
     
     public: 
 
-        Rule(string name, Tree root, vector<Pattern> patterns, int replace = -1, code_t cost = "");
+        Rule();
+        Rule(string name, vector<Pattern> patterns, Tree root, int replace = -1, code_t cost = "");
+
+        friend ostream& operator<<(ostream&, Rule&);
 
 };
 
