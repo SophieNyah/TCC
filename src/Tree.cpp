@@ -6,12 +6,16 @@ int Tree::max_children{2};
 
     /* Construtores */
 Tree::Tree(){};
-Tree::Tree(const string& op): op{ op }{}
-Tree::Tree(const string& op, const code_t& action): op{ op }, action{ action }{}
+Tree::Tree(const string& name, const Node_type& type)
+    : name{ name }, type{ type }
+    {}
+Tree::Tree(const string& name, const Node_type& type, const code_t& action)
+    : name{ name }, type{ type }, action{ action }
+    {}
 
 
     /* Métodos */
-void Tree::insertChild(Tree t){
+void Tree::insertChild(Tree& t){
     this->children.push_back(t);
 }
 
@@ -27,8 +31,33 @@ vector<Tree>& Tree::getChildren(){
     return this->children;
 }
 
+bool Tree::matchTree(Tree& root){
+    if( this->type == root.type ){
+        if( (this->type == operacao || this->type == especifico) 
+        && this->name != root.name ){
+            return false;
+        }
+
+        for( int i=0; i<this->getChildren().size(); i++ ){
+            Tree c1 = this->getChild(i).value();
+            optional<Tree> c2 = root.getChild(i);
+
+            if( !c2.has_value() ){ return false; }
+
+            if( !c1.matchTree(c2.value()) ){ return false; }
+        }
+
+    } else {
+        return false;
+    }
+
+    return true;
+}
+
+
+    /* Overloads de operadores */
 ostream& operator<<(ostream& out, Tree& tree){
-    out << tree.op;
+    out << tree.name << " (" << tree.type << ")";
     int children = tree.getChildren().size();
     
     if( children > 0 ){ out << "(" << tree.action << " "; }

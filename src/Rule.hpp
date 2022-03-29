@@ -27,10 +27,10 @@ class Rule {
         string name;
         code_t cost{ "" };
         vector<Pattern> patterns;
-        Tree tree_pattern;
     
     public: 
 
+        Tree tree_pattern;
         Rule();
         Rule(string name, vector<Pattern> patterns, Tree root, int replace = -1, code_t cost = "");
 

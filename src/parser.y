@@ -132,18 +132,16 @@ register: register  COMMA  register_name { $1.push_back($3); $$ = $1; }
 register_name: IDENTIFIER { $$ = $1; }
 ;
 
-    /* Primeiro casamento: DEVE ser um terminal */
-    /* Segundo casamento : checar se é um terminal ou não-terminal */
 tree: token  L_BRACKET  action  tree_list  R_BRACKET
         { 
             if(!Helper::isNonTerm($1)){
                 Helper::semanticError("Symbol \"" + $1 + "\" not declared as non-terminal");
             }
 
-            $$ = Tree{$1, $3};
+            $$ = Tree{$1, Node_type{ operacao }, $3};
             for( Tree t: $4 ){ $$.insertChild(t); }
         }
-    | token     { $$ = Tree{$1}; }
+    | token     { $$ = Tree{$1, Node_type{ registrador }}; }
 ;
 
 tree_list: tree_list  COMMA  tree { $1.push_back($3); $$ = $1; }

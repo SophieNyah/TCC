@@ -8,11 +8,14 @@
 
 using namespace std;
 
+enum Node_type{ registrador, constante, operacao, especifico };
+
 class Tree{
 
     private:
 
-        string op;  /* terminal ou não-terminal */
+        Node_type type;
+        string name;
         static int max_children;
         vector<Tree> children;
         code_t action;  /* Ação a ser executada quando o nó for visitado */
@@ -21,15 +24,17 @@ class Tree{
 
             /* Construtores */
         Tree();
-        Tree(const string& op);
-        Tree(const string& op, const code_t& action);
+        Tree(const string& op, const Node_type& type);
+        Tree(const string& op, const Node_type& type, const code_t& action);
 
 
             /* Métodos */
-        void insertChild(Tree);
+        void insertChild(Tree&);
         
         optional<Tree> getChild(int index);
         vector<Tree>& getChildren();
+
+        bool matchTree(Tree&);
 
         friend ostream& operator<<(ostream&, Tree&);
 

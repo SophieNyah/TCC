@@ -8,7 +8,7 @@
 
 %%
 
-$! regra $% [ADD $[regA, regB, regC$];SUB $[reg1, reg2$]] 3 <- mais({ int main(){int a,b=3; int c=b+2;} } armoss(s1, s2), moi) $% { return 3; } $!
+$! regra $% [ADD $[regA, regB, regC$];SUB $[reg1, reg2$]] 3 <- mais({ int main(){int a,b=3; int c=b+2;} } r1, moi) $% { return 3; } $!
 $! load $% [ADD $[ s1, s2 $]; MEM $[ s3, s2 $]] <- mem( mais( A, B ), C ) $% { return $cost[1] + 2; } $!
 
 %%
