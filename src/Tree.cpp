@@ -14,6 +14,9 @@ Tree::Tree(const string& name, const Node_type& type, const code_t& action)
     {}
 
 
+    /* Getters/Setters */
+string Tree::getName(){ return this->name; }
+
     /* Métodos */
 void Tree::insertChild(Tree& t){
     this->children.push_back(t);

@@ -28,6 +28,9 @@ class Tree{
         Tree(const string& op, const Node_type& type, const code_t& action);
 
 
+            /* Getters/Setters */
+        string getName();
+
             /* Métodos */
         void insertChild(Tree&);
         

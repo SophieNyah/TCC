@@ -28,8 +28,7 @@
 #include<algorithm>
 #include"scanner.hpp"
 #include"Helper.hpp"
-
-// std::vector<Rule> rules;
+#include"CodeGen.hpp"
 
 %}
 
@@ -171,7 +170,7 @@ void generator::parser::error(const generator::location &c, const std::string& m
 
 int main()
 {
-    
+
     yyscan_t scanner;
     yylex_init(&scanner);
     generator::parser parser{ scanner };
@@ -179,8 +178,7 @@ int main()
     yylex_destroy(scanner);
 
     if(!Helper::getError()){
-        for( auto r: Helper::getRules() )
-        std::cout << r << "\n\n";
+        CodeGenerator::generate();
     }
 
     return 0;
