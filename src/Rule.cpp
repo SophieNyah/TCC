@@ -1,5 +1,6 @@
 #include"Rule.hpp"
 
+    /* Patern */
 Pattern::Pattern(string name, vector<string> variables): name{name},variables{variables}{}
 ostream& operator<<(ostream& out, Pattern& s){
     out << s.name;
@@ -12,7 +13,13 @@ ostream& operator<<(ostream& out, Pattern& s){
     return out;
 }
 
+    /* Rule */
 
+        /* Membros estáticos */
+int Rule::rules_quantity{ 0 };
+
+
+        /* Construtores */
 Rule::Rule(){}
 Rule::Rule(string name, vector<Pattern> patterns, Tree root, int replace, code_t cost):
     name{ name },
@@ -20,9 +27,19 @@ Rule::Rule(string name, vector<Pattern> patterns, Tree root, int replace, code_t
     patterns{ patterns },
     replace{ replace },
     cost{ cost }
-    {}
+    {
+        this->rule_no = Rule::rules_quantity;
+        Rule::rules_quantity++;
+    }
 
 
+        /* Getters e Setter */
+string Rule::getName(){ return this->name; }
+int Rule::getRuleNumber(){ return this->rule_no; }
+Tree Rule::getPattern(){ return this->tree_pattern; }
+
+
+        /* Overload de operadores */
 ostream& operator<<(ostream& out, Rule& r){
     out << "Rule: " << r.name << '\n';
     out << "Tree: " << r.tree_pattern << '\n';

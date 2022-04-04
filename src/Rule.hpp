@@ -23,16 +23,23 @@ class Rule {
 
     private:
 
+        static int rules_quantity;
+
         int replace{ -1 };
+        int rule_no;
         string name;
         code_t cost{ "" };
         vector<Pattern> patterns;
+        Tree tree_pattern;
     
     public: 
 
-        Tree tree_pattern;
         Rule();
         Rule(string name, vector<Pattern> patterns, Tree root, int replace = -1, code_t cost = "");
+
+        string getName();
+        int getRuleNumber();
+        Tree getPattern();
 
         friend ostream& operator<<(ostream&, Rule&);
 

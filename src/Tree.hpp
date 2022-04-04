@@ -16,6 +16,7 @@ class Tree{
 
         Node_type type;
         string name;
+        int non_term;
         static int max_children;
         vector<Tree> children;
         code_t action;  /* Ação a ser executada quando o nó for visitado */
@@ -24,12 +25,14 @@ class Tree{
 
             /* Construtores */
         Tree();
-        Tree(const string& op, const Node_type& type);
-        Tree(const string& op, const Node_type& type, const code_t& action);
+        Tree(const string& op, const int non_term, const Node_type& type);
+        Tree(const string& op, const int non_term, const Node_type& type, const code_t& action);
 
 
             /* Getters/Setters */
         string getName();
+        Node_type getType();
+        int getNonTerm();
 
             /* Métodos */
         void insertChild(Tree&);

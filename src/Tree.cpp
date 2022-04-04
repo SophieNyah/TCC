@@ -6,16 +6,18 @@ int Tree::max_children{2};
 
     /* Construtores */
 Tree::Tree(){};
-Tree::Tree(const string& name, const Node_type& type)
-    : name{ name }, type{ type }
+Tree::Tree(const string& name, const int non_term, const Node_type& type)
+    : name{ name }, non_term{ non_term }, type{ type }
     {}
-Tree::Tree(const string& name, const Node_type& type, const code_t& action)
-    : name{ name }, type{ type }, action{ action }
+Tree::Tree(const string& name, const int non_term, const Node_type& type, const code_t& action)
+    : name{ name }, non_term{ non_term }, type{ type }, action{ action }
     {}
 
 
     /* Getters/Setters */
 string Tree::getName(){ return this->name; }
+Node_type Tree::getType(){ return this->type; }
+int Tree::getNonTerm(){ return this->non_term; }
 
     /* Métodos */
 void Tree::insertChild(Tree& t){
