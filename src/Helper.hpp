@@ -17,6 +17,7 @@ class Helper {
         static array<string> terminals;
         static array<string> non_terminals;
         static array<Rule> rules;
+        static code_t user_code;
 
     public:
 
@@ -32,8 +33,14 @@ class Helper {
         static void newTerm(const string &str);
         static void newNonTerm(const string &str);
         static void newRule(const Rule&);
+        
 
+        /* Getters e Setters */
         static array<Rule>& getRules();
+        static void setCode(code_t&);
+        static code_t& getCode();
+        static array<string>& getTerms();
+        static array<string>& getNonTerms();
 
         static void semanticError(const string &str);
         static void setError();
