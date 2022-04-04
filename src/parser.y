@@ -54,6 +54,9 @@
 
 %token <std::string> CPP_CODE
 %token <int> INTEGER
+%token <std::string> CONSTANT_ID
+%token <std::string> REGISTER_ID
+%token <std::string> SPECIFIC_ID
 %token <std::string> IDENTIFIER
 
 %token END_OF_FILE
@@ -70,6 +73,7 @@
 
 %type <Rule> rule
 
+%type <std::pair<std::string, Node_type>> tree_token
 %type <Tree> tree
 %type <std::vector<Tree>> tree_list
 
@@ -82,6 +86,8 @@
 %%
 
 start: header  DL_INPUT  rule  DL_INPUT  CPP_CODE  END_OF_FILE  {
+            code_t str{ $5.substr(1, $5.size()-2) };
+            Helper::setCode(str);
             return Helper::getError() ? 0 /*false*/ : 1 /*true*/;
         }
 ;
@@ -131,21 +137,25 @@ register: register  COMMA  register_name { $1.push_back($3); $$ = $1; }
 register_name: IDENTIFIER { $$ = $1; }
 ;
 
-tree: token  L_BRACKET  action  tree_list  R_BRACKET
+tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET
         { 
-            if(!Helper::isNonTerm($1)){
-                Helper::semanticError("Symbol \"" + $1 + "\" not declared as non-terminal");
+            if(!Helper::isNonTerm($1.first)){
+                Helper::semanticError("Symbol \"" + $1.first + "\" not declared as non-terminal");
             }
 
-            $$ = Tree{$1, Node_type{ operacao }, $3};
+            $$ = Tree{$1.first, 0, Node_type{ $1.second }, $3};
             for( Tree t: $4 ){ $$.insertChild(t); }
         }
-    | token     { $$ = Tree{$1, Node_type{ registrador }}; }
+    | tree_token     { $$ = Tree{$1.first, 0, Node_type{ $1.second }}; }
 ;
 
 tree_list: tree_list  COMMA  tree { $1.push_back($3); $$ = $1; }
          | tree           { $$.push_back($1); }
 ;
+tree_token: IDENTIFIER  { $$ = std::pair{ $1, operacao }; }
+          | REGISTER_ID { $$ = std::pair{ $1, registrador }; }
+          | CONSTANT_ID { $$ = std::pair{ $1, constante }; }
+          | SPECIFIC_ID { $$ = std::pair{ $1, especifico }; }
 
 action: CPP_CODE { $$ = $1; }
       | %empty   {}

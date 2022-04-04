@@ -68,6 +68,9 @@ using namespace generator;
 [0-9]+  { yylval->emplace<int>(std::atoi(yytext)); return parser::token::INTEGER; }
 
     /* Identificador */
+c[0-9]+                { yylval->emplace<std::string>(yytext); return parser::token::CONSTANT_ID; }
+r[0-9]+                { yylval->emplace<std::string>(yytext); return parser::token::REGISTER_ID; }
+#[_a-zA-Z0-9]          { yylval->emplace<std::string>(yytext); return parser::token::SPECIFIC_ID; }
 [_a-zA-Z][_a-zA-Z0-9]* { yylval->emplace<std::string>(yytext); return parser::token::IDENTIFIER; }
 
 	/* misc */
