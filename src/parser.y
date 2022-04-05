@@ -86,23 +86,27 @@
 %%
 
 start: header  DL_INPUT  rule  DL_INPUT  CPP_CODE  END_OF_FILE  {
-            code_t str{ $5.substr(1, $5.size()-2) };
-            Helper::setCode(str);
+            code_t code{ $5.substr(1, $5.size()-2) };
+            Helper::setCode(code);
             return Helper::getError() ? 0 /*false*/ : 1 /*true*/;
         }
 ;
 
 header: header  header_new_token {}
-      | header_new_token        {}
+      | header CPP_CODE          {
+            code_t code{ $2.substr(1, $2.size()-2) };
+            Helper::setHeader(code);
+        }
+      | header_new_token         {}
 ;
 header_new_token: NEW_TERM  IDENTIFIER     { Helper::newTerm($2); }
                 | NEW_NON_TERM  IDENTIFIER { Helper::newNonTerm($2); }
 ;
 
 rule: DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  TREE_PATTERN_SEPARATOR  tree  DL_PATTERN  cost  DL_RULE
-        { Helper::newRule(Rule{$2, $4, $7, $5, $9}); }
+        { Helper::newRule(Rule{$2, $4, $7, $5, $9.substr(1, $9.size()-2)}); }
     | rule DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  TREE_PATTERN_SEPARATOR  tree  DL_PATTERN  cost  DL_RULE
-        { Helper::newRule(Rule{$3, $5, $8, $6, $10}); }
+        { Helper::newRule(Rule{$3, $5, $8, $6, $10.substr(1, $10.size()-2)}); }
 ;
 
 pattern: L_SBRACKET  pattern_rule  R_SBRACKET { $$ = $2; }

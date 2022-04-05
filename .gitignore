@@ -65,3 +65,5 @@ scanner.hpp
 generator
 tests/grammar_outputs/
 location.hh
+.vscode/*
+CodeGen old.cpp

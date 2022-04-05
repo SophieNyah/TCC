@@ -34,9 +34,10 @@ Rule::Rule(string name, vector<Pattern> patterns, Tree root, int replace, code_t
 
 
         /* Getters e Setter */
-string Rule::getName(){ return this->name; }
-int Rule::getRuleNumber(){ return this->rule_no; }
-Tree Rule::getPattern(){ return this->tree_pattern; }
+string Rule::getName()      { return this->name; }
+int    Rule::getRuleNumber(){ return this->rule_no; }
+Tree   Rule::getPattern()   { return this->tree_pattern; }
+code_t Rule::getCost()      { return this->cost; }
 
 
         /* Overload de operadores */

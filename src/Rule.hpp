@@ -39,6 +39,7 @@ class Rule {
 
         string getName();
         int getRuleNumber();
+        code_t getCost();
         Tree getPattern();
 
         friend ostream& operator<<(ostream&, Rule&);

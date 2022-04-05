@@ -7,6 +7,6 @@
 using code_t = std::string;
 
 template <typename T>
-using array = std::vector<T>;
+using MyArray = std::vector<T>;
 
 #endif

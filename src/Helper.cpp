@@ -5,19 +5,20 @@
 using namespace std;
 
     /* Definição dos atributos */
-bool          Helper::hadError{false};
-array<string> Helper::terminals{};
-array<string> Helper::non_terminals{};
-array<Rule>   Helper::rules{};
-code_t        Helper::user_code{};
+bool            Helper::hadError{false};
+MyArray<string> Helper::terminals{};
+MyArray<string> Helper::non_terminals{};
+MyArray<Rule>   Helper::rules{};
+code_t          Helper::user_code{""};
+code_t          Helper::header_code{""};
 
 
 
     /* Funções de suporte */
-void insertElement(array<string> &arr, const string &str){ arr.push_back(str); }
-void insertElement(array<Rule>& arr, const Rule& r){ arr.push_back(r); }
+void insertElement(MyArray<string> &arr, const string &str){ arr.push_back(str); }
+void insertElement(MyArray<Rule>& arr, const Rule& r){ arr.push_back(r); }
 
-int findElement(const array<string> &arr, const string &str){
+int findElement(const MyArray<string> &arr, const string &str){
     auto it = find(arr.begin(), arr.end(), str);
     return  it != arr.end()  ?  it-arr.begin()  :  -1;
 }
@@ -34,14 +35,16 @@ void Helper::newRule(const Rule& r){ insertElement(Helper::rules, r); }
 
 
     /* Getters e Setters */
-array<Rule>& Helper::getRules(){ return Helper::rules; }
+MyArray<Rule>& Helper::getRules(){ return Helper::rules; }
 
 void Helper::setCode(code_t& code){ Helper::user_code = code; }
 code_t& Helper::getCode(){ return Helper::user_code; }
 
+void Helper::setHeader(code_t& code){ Helper::header_code.append(code); }
+code_t& Helper::getHeader(){ return Helper::header_code; }
 
-array<string>& Helper::getTerms(){ return Helper::terminals; }
-array<string>& Helper::getNonTerms(){ return Helper::non_terminals; }
+MyArray<string>& Helper::getTerms(){ return Helper::terminals; }
+MyArray<string>& Helper::getNonTerms(){ return Helper::non_terminals; }
 
 bool Helper::getError(){ return Helper::hadError; }
 void Helper::setError(){ Helper::hadError = true; }

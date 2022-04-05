@@ -14,10 +14,11 @@ class Helper {
 
         static bool hadError;
 
-        static array<string> terminals;
-        static array<string> non_terminals;
-        static array<Rule> rules;
+        static MyArray<string> terminals;
+        static MyArray<string> non_terminals;
+        static MyArray<Rule> rules;
         static code_t user_code;
+        static code_t header_code;
 
     public:
 
@@ -36,11 +37,13 @@ class Helper {
         
 
         /* Getters e Setters */
-        static array<Rule>& getRules();
+        static MyArray<Rule>& getRules();
         static void setCode(code_t&);
         static code_t& getCode();
-        static array<string>& getTerms();
-        static array<string>& getNonTerms();
+        static void setHeader(code_t&);
+        static code_t& getHeader();
+        static MyArray<string>& getTerms();
+        static MyArray<string>& getNonTerms();
 
         static void semanticError(const string &str);
         static void setError();

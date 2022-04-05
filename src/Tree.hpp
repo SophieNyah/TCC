@@ -8,7 +8,7 @@
 
 using namespace std;
 
-enum Node_type{ registrador, constante, operacao, especifico };
+enum Node_type{ operacao, registrador, constante, especifico };
 
 class Tree{
 
@@ -42,6 +42,7 @@ class Tree{
 
         bool matchTree(Tree&);
 
+            /* Overloads de operadores */
         friend ostream& operator<<(ostream&, Tree&);
 
 };
