@@ -15,12 +15,14 @@ namespace{
 
         /* Aliases */
     using table_t = vector<vector<int>>;
+    using state_data_t = pair<string, code_t>;
+    using final_state_t = pair<int, state_data_t>;
 
 
         /* Variáveis locais */
     fstream out_file{ "saida.cpp" };
     map<string, int> nonTerms{};
-    vector<pair<int, pair<int, code_t>>> final_states{};
+    vector<final_state_t> final_states{};
 
 
         /* Funções locais */
@@ -28,6 +30,7 @@ namespace{
         MyArray<string> nt = Helper::getNonTerms();
         for( int i=0; i<nt.size(); i++ ) nonTerms.insert(pair<string, int>{ nt.at(i), i });
     }
+    
     string printTab(int n){
         string str{""};
         for(int i=0; i<n; i++){
@@ -35,6 +38,7 @@ namespace{
         }
         return str;
     }
+    
     void printHeader(){
         /* Header do usuário */
         out_file << Helper::getHeader() << '\n';
@@ -51,14 +55,14 @@ namespace{
         out_file << "using MyPair = std::pair<rule_number_t, cost_t>;\n\n";
 
         /* Enum de regras */
-        out_file << "enum Rules {\n";
+        out_file << "enum class Rules {\n";
         for( Rule r: Helper::getRules() ){
             out_file << printTab(1) << r.getName() << " = " << r.getRuleNumber() << ",\n";
         }
         out_file << "};\n\n";
 
         /* Enum de não-terminais */
-        out_file << "enum Non_terminals{\n";
+        out_file << "enum class Non_terminals {\n";
         MyArray<string> nt{ Helper::getNonTerms() };
         for( auto nt: nonTerms ){
             out_file << printTab(1) << nt.first << " = " << nt.second << ",\n";
@@ -76,7 +80,7 @@ namespace{
     void traverseTree(table_t* table, int& state, Tree& tree){
         MyArray<Tree> children = tree.getChildren();
         table_t tab = *table;
-        int column{ tree.getType() == operacao  ?  nonTerms[tree.getName()]  :  (int)nonTerms.size() + tree.getType() - 1 };
+        int column{ tree.getType() == Node_type::operacao  ?  nonTerms[tree.getName()]  :  (int)nonTerms.size() + (int)tree.getType() - 1 };
 
         if( (*table)[state][column] == 0 ){
             table->push_back(vector<int>( (int)nonTerms.size() + 3, 0 ));
@@ -101,7 +105,7 @@ namespace{
             int state{ 0 };
             traverseTree(table, state, tree);
 
-            final_states.push_back(pair<int, pair<int, code_t>>{ state, pair<int, code_t>{ r.getRuleNumber(), r.getCost() } });
+            final_states.push_back(final_state_t{ state, state_data_t{ r.getName(), r.getCost() } });
         }
 
         return table;
@@ -127,7 +131,7 @@ namespace{
         out_file << printTab(1) << "switch(state){\n";
 
         for( auto f: final_states ){
-            out_file << printTab(2) << "case " << f.first << ": return MyPair{" << f.second.first << ", " << f.second.second << "};\n";
+            out_file << printTab(2) << "case " << f.first << ": return MyPair{Rules::" << f.second.first << ", " << f.second.second << "};\n";
         }
         out_file << printTab(2) << "default: return MyPair{-1, -1};\n";
 

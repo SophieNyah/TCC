@@ -156,10 +156,10 @@ tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET
 tree_list: tree_list  COMMA  tree { $1.push_back($3); $$ = $1; }
          | tree           { $$.push_back($1); }
 ;
-tree_token: IDENTIFIER  { $$ = std::pair{ $1, operacao }; }
-          | REGISTER_ID { $$ = std::pair{ $1, registrador }; }
-          | CONSTANT_ID { $$ = std::pair{ $1, constante }; }
-          | SPECIFIC_ID { $$ = std::pair{ $1, especifico }; }
+tree_token: IDENTIFIER  { $$ = std::pair{ $1, Node_type::operacao }; }
+          | REGISTER_ID { $$ = std::pair{ $1, Node_type::registrador }; }
+          | CONSTANT_ID { $$ = std::pair{ $1, Node_type::constante }; }
+          | SPECIFIC_ID { $$ = std::pair{ $1, Node_type::especifico }; }
 
 action: CPP_CODE { $$ = $1; }
       | %empty   {}

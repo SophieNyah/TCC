@@ -8,7 +8,7 @@
 
 using namespace std;
 
-enum Node_type{ operacao, registrador, constante, especifico };
+enum class Node_type{ operacao, registrador, constante, especifico };
 
 class Tree{
 
@@ -44,6 +44,22 @@ class Tree{
 
             /* Overloads de operadores */
         friend ostream& operator<<(ostream&, Tree&);
+
+};
+
+class BaseUserTree: public Tree{
+
+    protected:
+
+        BaseUserTree(const string& name, const int non_term, const Node_type& type)
+            : Tree{ name, non_term, type }
+            {}
+            
+    public:
+
+        virtual Tree readTree() = 0;
+
+        virtual ~BaseUserTree() = default;
 
 };
 

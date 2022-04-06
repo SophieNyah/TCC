@@ -38,7 +38,7 @@ vector<Tree>& Tree::getChildren(){
 
 bool Tree::matchTree(Tree& root){
     if( this->type == root.type ){
-        if( (this->type == operacao || this->type == especifico) 
+        if( (this->type == Node_type::operacao || this->type == Node_type::especifico) 
         && this->name != root.name ){
             return false;
         }
@@ -62,7 +62,7 @@ bool Tree::matchTree(Tree& root){
 
     /* Overloads de operadores */
 ostream& operator<<(ostream& out, Tree& tree){
-    out << tree.name << " (" << tree.type << ")";
+    out << tree.name << " (" << (int)tree.type << ")";
     int children = tree.getChildren().size();
     
     if( children > 0 ){ out << "(" << tree.action << " "; }

@@ -6,6 +6,22 @@
 
 {
 #include<iostream>
+
+class UserTree: public BaseUserTree{
+    public:
+
+        UserTree(const string& name, const int non_term, const Node_type& type)
+            : BaseUserTree{ name, non_term, type }
+            {}
+
+        Tree readTree(){
+            Tree t1{ "mais", mais, Node_type::operacao};
+            t1.insertChild(Tree{ "r1", 0, Node_type::registrador });
+            t1.insertChild(Tree{ "r2", 0, Node_type::registrador });
+            return t1;
+        }
+};
+
 }
 
 %nonterm menos
@@ -34,8 +50,6 @@ $% { $cost[1] + 2 } $!
 
 {
 int main(){
-    Tree mais{"mais", Non_terminals::mais, operacao}, r1{"r1", 0, registrador}, c1{"c1", 0, registrador};
-    mais.insertChild(r1);
-    mais.insertChild(c1);
+    UserTree ut{}
 }
 }
