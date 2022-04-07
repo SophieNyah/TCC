@@ -26,6 +26,15 @@ namespace{
 
 
         /* Funções locais */
+
+    int calculateCost(BasicTree& tree){
+        int cost = 0 + tree.cost.integer_part;
+        for( int i: tree.cost.cost_directives ){
+            BasicTree t = tree.getChild(i).value();
+            cost += calculateCost(t);
+        }
+    }
+
     void generateNonTermsMap(){
         MyArray<string> nt = Helper::getNonTerms();
         for( int i=0; i<nt.size(); i++ ) nonTerms.insert(pair<string, int>{ nt.at(i), i });
@@ -43,9 +52,6 @@ namespace{
         /* Includes */
         out_file << "#include\"./src/Tree.hpp\"\n\n";
 
-        /* Namespace para evitar conflite de nomes */
-        // out_file << "namespace Code_Generator{\n\n";
-
         /* Enum de regras */
         out_file << "enum class Rules {\n";
         out_file << printTab(1) << "null = -1,\n";
@@ -62,17 +68,25 @@ namespace{
         }
         out_file << "};\n\n";
         
-        /* Fecha temporariamente o namespace */
-        // out_file << "}\n\n";
         /* Header do usuário */
-        out_file << Helper::getHeader() << '\n';
-        /* Reabre o namespace */
+        out_file << Helper::getHeader() << "\n\n";
+
+        /* Abre o namespace */
         out_file << "namespace Code_Generator{\n\n";
 
         /* Aliases de tipos */
         out_file << "using cost_t = int;\n";
         out_file << "using rule_number_t = Rules;\n";
         out_file << "using MyPair = std::pair<rule_number_t, cost_t>;\n\n";
+
+        /* Função do cálculo do custo */
+        // out_file << "int calculateCost(Tree& tree){\n";
+        // out_file << printTab(1) << "int cost = 0 + tree.cost.integer_part;\n";
+        // out_file << printTab(1) << "for( int i: tree.cost.cost_directives ){\n";
+        // out_file << printTab(2) << "Tree t = tree.getChild(i).value();\n";
+        // out_file << printTab(2) << "cost += calculateCost(t);\n";
+        // out_file << printTab(1) << "}\n";
+        // out_file << "}\n\n";
     }
     
     void printFooter(){
@@ -140,7 +154,8 @@ namespace{
         out_file << printTab(1) << "switch(state){\n";
 
         for( auto f: final_states ){
-            out_file << printTab(2) << "case " << f.first << ": return MyPair{Rules::" << f.second.first << ", " << f.second.second << "};\n";
+            out_file << printTab(2) << "case " << f.first << ": return MyPair{ Rules::"
+                << f.second.first << ", 3 };\n";
         }
         out_file << printTab(2) << "default: return MyPair{Rules::null, -1};\n";
 

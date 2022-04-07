@@ -7,18 +7,20 @@
 {
 #include<iostream>
 
-class Tree: public BaseTree{
+class Tree: public VirtualTree<Tree>{
     public:
 
         Tree(){}
         Tree(const string& name, const Non_terminals non_term, const Node_type& type)
-            : BaseTree{ name, non_term, type }
+            : VirtualTree{ name, non_term, type }
             {}
 
-        Tree* readTree() override {
-            Tree *t1 = new Tree{ string("mais"), Non_terminals::mais, Node_type::operacao};
-            t1->insertChild(Tree{ string("r1"), Non_terminals::null, Node_type::registrador });
-            t1->insertChild(Tree{ string("r2"), Non_terminals::null, Node_type::registrador });
+        Tree readTree() override {
+            Tree t1{ string("mais"), Non_terminals::mais, Node_type::operacao};
+            Tree t2{ string("r1"), Non_terminals::null, Node_type::registrador };
+            t2.coisa1 = 3;
+            t1.insertChild(t2);
+            t1.insertChild(Tree{ string("r2"), Non_terminals::null, Node_type::registrador });
             return t1;
         }
 
@@ -56,6 +58,7 @@ $% { $cost[1] + 2 } $!
 {
 int main(){
     Tree t{};
-    std::cout << t.readTree();
+    t = t.readTree();
+    std::cout << t.getChild(0).value().coisa1;
 }
 }

@@ -15,7 +15,6 @@ struct Pattern{
 
     public:
         Pattern(string name, vector<string> variables);
-        friend ostream& operator<<(ostream& out, Pattern& s);
 };
 
 
@@ -41,8 +40,6 @@ class Rule {
         int getRuleNumber();
         code_t getCost();
         BasicTree getPattern();
-
-        friend ostream& operator<<(ostream&, Rule&);
 
 };
 

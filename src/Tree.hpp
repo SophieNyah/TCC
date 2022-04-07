@@ -11,44 +11,50 @@ using namespace std;
 enum class Node_type{ operacao, registrador, constante, especifico };
 enum class Non_terminals: int;
 
-class BasicTree{
+template<typename T>
+class TemplateTree{
 
-    private:
+    protected:
 
+        vector<T> children;
         Node_type type;
         string name;
         int non_term;
-        vector<BasicTree> children;
-        code_t action;  /* Ação a ser executada quando o nó for visitado */
+        code_t action;
 
     public:
 
             /* Construtores */
-        BasicTree();
-        BasicTree(const string& op, const int non_term, const Node_type& type);
-        BasicTree(const string& op, const Non_terminals non_term, const Node_type& type);
-        BasicTree(const string& op, const int non_term, const Node_type& type, const code_t& action);
+        TemplateTree(){}
+        TemplateTree(const string& name, const int non_term, const Node_type& type)
+            : name{ name }, non_term{ non_term }, type{ type }{}
+        TemplateTree(const string& name, const Non_terminals non_term, const Node_type& type)
+            : name{ name }, non_term{ (int)non_term }, type{ type }{}
+        TemplateTree(const string& name, const int non_term, const Node_type& type, const code_t& action)
+            : name{ name }, non_term{ non_term }, type{ type }, action{ action }{}
 
 
             /* Getters/Setters */
-        string getName();
-        Node_type getType();
-        int getNonTerm();
+        string getName(){ return this->name; }
+        Node_type getType(){ return this->type; }
+        int getNonTerm(){ return this->non_term; }
 
             /* Métodos */
-        void insertChild(const BasicTree&);
+        void insertChild(const T& c){ this->children.push_back(c); }
         
-        optional<BasicTree> getChild(int index);
-        vector<BasicTree>& getChildren();
-
-        bool matchTree(BasicTree&);
-
-            /* Overloads de operadores */
-        friend ostream& operator<<(ostream&, BasicTree&);
+        optional<T> getChild(int index){
+            try{
+                return this->children.at(index);
+            }
+             catch (const out_of_range& e) {
+                return std::nullopt;
+            }
+        }
+        
+        vector<T>& getChildren(){ return this->children; }
 
 };
 
-class Tree;
 
 struct Cost_expression{
     vector<int> cost_directives;
@@ -56,22 +62,34 @@ struct Cost_expression{
     Cost_expression(){}
     Cost_expression(vector<int> c, int i=0):cost_directives{ c }, integer_part{ i }{}
 };
-class BaseTree: public BasicTree{
+
+
+class BasicTree: public TemplateTree<BasicTree>{
+    public:
+        BasicTree();
+        BasicTree(const string& name, const int non_term, const Node_type& type);
+        BasicTree(const string& name, const Non_terminals non_term, const Node_type& type);
+        BasicTree(const string& name, const int non_term, const Node_type& type, const code_t& action);  
+
+        Cost_expression cost;  
+};
+
+
+template<typename U>
+class VirtualTree: public TemplateTree<U>{
 
     protected:
 
-        BaseTree(){}
-        BaseTree(const string& name, const Non_terminals non_term, const Node_type& type)
-            : BasicTree{ name, non_term, type }
+        VirtualTree(){}
+        VirtualTree(const string& name, const Non_terminals non_term, const Node_type& type)
+            : TemplateTree<U>{ name, non_term, type }
             {}
             
     public:
 
-        virtual Tree* readTree() = 0;
+        virtual U readTree() = 0;
 
-        Cost_expression cost;
-
-        virtual ~BaseTree() = default;
+        virtual ~VirtualTree() = default;
 
 };
 
