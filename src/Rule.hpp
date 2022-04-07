@@ -30,17 +30,17 @@ class Rule {
         string name;
         code_t cost{ "" };
         vector<Pattern> patterns;
-        Tree tree_pattern;
+        BasicTree tree_pattern;
     
     public: 
 
         Rule();
-        Rule(string name, vector<Pattern> patterns, Tree root, int replace = -1, code_t cost = "");
+        Rule(string name, vector<Pattern> patterns, BasicTree root, int replace = -1, code_t cost = "");
 
         string getName();
         int getRuleNumber();
         code_t getCost();
-        Tree getPattern();
+        BasicTree getPattern();
 
         friend ostream& operator<<(ostream&, Rule&);
 

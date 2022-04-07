@@ -40,22 +40,15 @@ namespace{
     }
     
     void printHeader(){
-        /* Header do usuário */
-        out_file << Helper::getHeader() << '\n';
-
         /* Includes */
         out_file << "#include\"./src/Tree.hpp\"\n\n";
 
         /* Namespace para evitar conflite de nomes */
-        out_file << "namespace Code_Generator{\n\n";
-
-        /* Aliases de tipos */
-        out_file << "using cost_t = int;\n";
-        out_file << "using rule_number_t = int;\n";
-        out_file << "using MyPair = std::pair<rule_number_t, cost_t>;\n\n";
+        // out_file << "namespace Code_Generator{\n\n";
 
         /* Enum de regras */
         out_file << "enum class Rules {\n";
+        out_file << printTab(1) << "null = -1,\n";
         for( Rule r: Helper::getRules() ){
             out_file << printTab(1) << r.getName() << " = " << r.getRuleNumber() << ",\n";
         }
@@ -63,12 +56,25 @@ namespace{
 
         /* Enum de não-terminais */
         out_file << "enum class Non_terminals {\n";
-        MyArray<string> nt{ Helper::getNonTerms() };
+        out_file << printTab(1) << "null = -1,\n";
         for( auto nt: nonTerms ){
             out_file << printTab(1) << nt.first << " = " << nt.second << ",\n";
         }
         out_file << "};\n\n";
+        
+        /* Fecha temporariamente o namespace */
+        // out_file << "}\n\n";
+        /* Header do usuário */
+        out_file << Helper::getHeader() << '\n';
+        /* Reabre o namespace */
+        out_file << "namespace Code_Generator{\n\n";
+
+        /* Aliases de tipos */
+        out_file << "using cost_t = int;\n";
+        out_file << "using rule_number_t = Rules;\n";
+        out_file << "using MyPair = std::pair<rule_number_t, cost_t>;\n\n";
     }
+    
     void printFooter(){
         /* Fecha o namespace */
         out_file << "}\n\n";
@@ -77,8 +83,9 @@ namespace{
         out_file << '\n' << Helper::getCode() << '\n';
     }
 
-    void traverseTree(table_t* table, int& state, Tree& tree){
-        MyArray<Tree> children = tree.getChildren();
+
+    void traverseTree(table_t* table, int& state, BasicTree& tree){
+        MyArray<BasicTree> children = tree.getChildren();
         table_t tab = *table;
         int column{ tree.getType() == Node_type::operacao  ?  nonTerms[tree.getName()]  :  (int)nonTerms.size() + (int)tree.getType() - 1 };
 
@@ -91,16 +98,17 @@ namespace{
             state = (*table)[state][column];
         }
 
-        for( Tree t: children ){
+        for( BasicTree t: children ){
             traverseTree(table, state, t);
         }
     }
+    
     table_t* generateTable(MyArray<Rule>& rules){
             /* As colunas representam os não-terminais, seguidos dos Node_type registrador, constante, e especifico */
         table_t *table{ new table_t(1, vector<int>( (int)nonTerms.size() + 3, 0 )) };
 
         for( Rule r: rules ){
-            Tree tree{ r.getPattern() };
+            BasicTree tree{ r.getPattern() };
 
             int state{ 0 };
             traverseTree(table, state, tree);
@@ -110,6 +118,7 @@ namespace{
 
         return table;
     }
+    
     void printTableAndFinalStates(table_t* table){
         int rows{ (int)table->size() };
         int columns{ (int)(*table)[0].size() };
@@ -133,7 +142,7 @@ namespace{
         for( auto f: final_states ){
             out_file << printTab(2) << "case " << f.first << ": return MyPair{Rules::" << f.second.first << ", " << f.second.second << "};\n";
         }
-        out_file << printTab(2) << "default: return MyPair{-1, -1};\n";
+        out_file << printTab(2) << "default: return MyPair{Rules::null, -1};\n";
 
         out_file << printTab(1) << "}\n";
         out_file << "}\n\n";

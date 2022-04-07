@@ -7,19 +7,24 @@
 {
 #include<iostream>
 
-class UserTree: public BaseUserTree{
+class Tree: public BaseTree{
     public:
 
-        UserTree(const string& name, const int non_term, const Node_type& type)
-            : BaseUserTree{ name, non_term, type }
+        Tree(){}
+        Tree(const string& name, const Non_terminals non_term, const Node_type& type)
+            : BaseTree{ name, non_term, type }
             {}
 
-        Tree readTree(){
-            Tree t1{ "mais", mais, Node_type::operacao};
-            t1.insertChild(Tree{ "r1", 0, Node_type::registrador });
-            t1.insertChild(Tree{ "r2", 0, Node_type::registrador });
+        Tree* readTree() override {
+            Tree *t1 = new Tree{ string("mais"), Non_terminals::mais, Node_type::operacao};
+            t1->insertChild(Tree{ string("r1"), Non_terminals::null, Node_type::registrador });
+            t1->insertChild(Tree{ string("r2"), Non_terminals::null, Node_type::registrador });
             return t1;
         }
+
+        int coisa1;
+        int coisa2;
+
 };
 
 }
@@ -50,6 +55,7 @@ $% { $cost[1] + 2 } $!
 
 {
 int main(){
-    UserTree ut{}
+    Tree t{};
+    std::cout << t.readTree();
 }
 }

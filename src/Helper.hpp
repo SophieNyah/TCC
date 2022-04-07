@@ -28,15 +28,20 @@ class Helper {
         Helper& operator=(const Helper& h) = delete;
 
             
+            /* Métodos */
         static bool isTerm(const string &str);
         static bool isNonTerm(const string &str);
 
         static void newTerm(const string &str);
         static void newNonTerm(const string &str);
         static void newRule(const Rule&);
+
+        static string ltrim(const string&);
+        static string rtrim(const string&);
+        static string trim(const string&);
         
 
-        /* Getters e Setters */
+            /* Getters e Setters */
         static MyArray<Rule>& getRules();
         static void setCode(code_t&);
         static code_t& getCode();

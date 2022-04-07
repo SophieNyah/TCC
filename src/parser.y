@@ -74,8 +74,8 @@
 %type <Rule> rule
 
 %type <std::pair<std::string, Node_type>> tree_token
-%type <Tree> tree
-%type <std::vector<Tree>> tree_list
+%type <BasicTree> tree
+%type <std::vector<BasicTree>> tree_list
 
 %type <vector<Pattern>> pattern
 %type <vector<Pattern>> pattern_rule
@@ -86,7 +86,7 @@
 %%
 
 start: header  DL_INPUT  rule  DL_INPUT  CPP_CODE  END_OF_FILE  {
-            code_t code{ $5.substr(1, $5.size()-2) };
+            code_t code{ Helper::trim($5.substr(1, $5.size()-2)) };
             Helper::setCode(code);
             return Helper::getError() ? 0 /*false*/ : 1 /*true*/;
         }
@@ -94,7 +94,7 @@ start: header  DL_INPUT  rule  DL_INPUT  CPP_CODE  END_OF_FILE  {
 
 header: header  header_new_token {}
       | header CPP_CODE          {
-            code_t code{ $2.substr(1, $2.size()-2) };
+            code_t code{ Helper::trim($2.substr(1, $2.size()-2)) };
             Helper::setHeader(code);
         }
       | header_new_token         {}
@@ -104,9 +104,9 @@ header_new_token: NEW_TERM  IDENTIFIER     { Helper::newTerm($2); }
 ;
 
 rule: DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  TREE_PATTERN_SEPARATOR  tree  DL_PATTERN  cost  DL_RULE
-        { Helper::newRule(Rule{$2, $4, $7, $5, $9.substr(1, $9.size()-2)}); }
+        { Helper::newRule(Rule{ $2, $4, $7, $5, Helper::trim($9.substr(1, $9.size()-2)) }); }
     | rule DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  TREE_PATTERN_SEPARATOR  tree  DL_PATTERN  cost  DL_RULE
-        { Helper::newRule(Rule{$3, $5, $8, $6, $10.substr(1, $10.size()-2)}); }
+        { Helper::newRule(Rule{ $3, $5, $8, $6, Helper::trim($10.substr(1, $10.size()-2)) }); }
 ;
 
 pattern: L_SBRACKET  pattern_rule  R_SBRACKET { $$ = $2; }
@@ -147,10 +147,10 @@ tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET
                 Helper::semanticError("Symbol \"" + $1.first + "\" not declared as non-terminal");
             }
 
-            $$ = Tree{$1.first, 0, Node_type{ $1.second }, $3};
-            for( Tree t: $4 ){ $$.insertChild(t); }
+            $$ = BasicTree{$1.first, 0, Node_type{ $1.second }, $3};
+            for( BasicTree t: $4 ){ $$.insertChild(t); }
         }
-    | tree_token     { $$ = Tree{$1.first, 0, Node_type{ $1.second }}; }
+    | tree_token     { $$ = BasicTree{$1.first, 0, Node_type{ $1.second }}; }
 ;
 
 tree_list: tree_list  COMMA  tree { $1.push_back($3); $$ = $1; }

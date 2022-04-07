@@ -9,24 +9,25 @@
 using namespace std;
 
 enum class Node_type{ operacao, registrador, constante, especifico };
+enum class Non_terminals: int;
 
-class Tree{
+class BasicTree{
 
     private:
 
         Node_type type;
         string name;
         int non_term;
-        static int max_children;
-        vector<Tree> children;
+        vector<BasicTree> children;
         code_t action;  /* Ação a ser executada quando o nó for visitado */
 
     public:
 
             /* Construtores */
-        Tree();
-        Tree(const string& op, const int non_term, const Node_type& type);
-        Tree(const string& op, const int non_term, const Node_type& type, const code_t& action);
+        BasicTree();
+        BasicTree(const string& op, const int non_term, const Node_type& type);
+        BasicTree(const string& op, const Non_terminals non_term, const Node_type& type);
+        BasicTree(const string& op, const int non_term, const Node_type& type, const code_t& action);
 
 
             /* Getters/Setters */
@@ -35,31 +36,42 @@ class Tree{
         int getNonTerm();
 
             /* Métodos */
-        void insertChild(Tree&);
+        void insertChild(const BasicTree&);
         
-        optional<Tree> getChild(int index);
-        vector<Tree>& getChildren();
+        optional<BasicTree> getChild(int index);
+        vector<BasicTree>& getChildren();
 
-        bool matchTree(Tree&);
+        bool matchTree(BasicTree&);
 
             /* Overloads de operadores */
-        friend ostream& operator<<(ostream&, Tree&);
+        friend ostream& operator<<(ostream&, BasicTree&);
 
 };
 
-class BaseUserTree: public Tree{
+class Tree;
+
+struct Cost_expression{
+    vector<int> cost_directives;
+    int integer_part;
+    Cost_expression(){}
+    Cost_expression(vector<int> c, int i=0):cost_directives{ c }, integer_part{ i }{}
+};
+class BaseTree: public BasicTree{
 
     protected:
 
-        BaseUserTree(const string& name, const int non_term, const Node_type& type)
-            : Tree{ name, non_term, type }
+        BaseTree(){}
+        BaseTree(const string& name, const Non_terminals non_term, const Node_type& type)
+            : BasicTree{ name, non_term, type }
             {}
             
     public:
 
-        virtual Tree readTree() = 0;
+        virtual Tree* readTree() = 0;
 
-        virtual ~BaseUserTree() = default;
+        Cost_expression cost;
+
+        virtual ~BaseTree() = default;
 
 };
 

@@ -33,6 +33,19 @@ void Helper::newTerm(const string &str){ insertElement(Helper::terminals, str); 
 void Helper::newNonTerm(const string &str){ insertElement(Helper::non_terminals, str); }
 void Helper::newRule(const Rule& r){ insertElement(Helper::rules, r); }
 
+static const string WHITESPACE = " \n\r\t\f\v";
+string Helper::ltrim(const string &s){
+    size_t start = s.find_first_not_of(WHITESPACE);
+    return (start == string::npos) ? "" : s.substr(start);
+}
+string Helper::rtrim(const string &s){
+    size_t end = s.find_last_not_of(WHITESPACE);
+    return (end == string::npos) ? "" : s.substr(0, end + 1);
+}
+string Helper::trim(const string &s){
+    return rtrim(ltrim(s));
+}
+
 
     /* Getters e Setters */
 MyArray<Rule>& Helper::getRules(){ return Helper::rules; }

@@ -21,7 +21,7 @@ int Rule::rules_quantity{ 0 };
 
         /* Construtores */
 Rule::Rule(){}
-Rule::Rule(string name, vector<Pattern> patterns, Tree root, int replace, code_t cost):
+Rule::Rule(string name, vector<Pattern> patterns, BasicTree root, int replace, code_t cost):
     name{ name },
     tree_pattern{ root },
     patterns{ patterns },
@@ -36,7 +36,7 @@ Rule::Rule(string name, vector<Pattern> patterns, Tree root, int replace, code_t
         /* Getters e Setter */
 string Rule::getName()      { return this->name; }
 int    Rule::getRuleNumber(){ return this->rule_no; }
-Tree   Rule::getPattern()   { return this->tree_pattern; }
+BasicTree   Rule::getPattern()   { return this->tree_pattern; }
 code_t Rule::getCost()      { return this->cost; }
 
 

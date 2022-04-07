@@ -2,29 +2,30 @@
 #include<iostream>
 #include"Tree.hpp"
 
-int Tree::max_children{2};
-
     /* Construtores */
-Tree::Tree(){};
-Tree::Tree(const string& name, const int non_term, const Node_type& type)
+BasicTree::BasicTree(){};
+BasicTree::BasicTree(const string& name, const int non_term, const Node_type& type)
     : name{ name }, non_term{ non_term }, type{ type }
     {}
-Tree::Tree(const string& name, const int non_term, const Node_type& type, const code_t& action)
+BasicTree::BasicTree(const string& name, const Non_terminals non_term, const Node_type& type)
+    : name{ name }, non_term{ (int)non_term }, type{ type }
+    {}
+BasicTree::BasicTree(const string& name, const int non_term, const Node_type& type, const code_t& action)
     : name{ name }, non_term{ non_term }, type{ type }, action{ action }
     {}
 
 
     /* Getters/Setters */
-string Tree::getName(){ return this->name; }
-Node_type Tree::getType(){ return this->type; }
-int Tree::getNonTerm(){ return this->non_term; }
+string BasicTree::getName(){ return this->name; }
+Node_type BasicTree::getType(){ return this->type; }
+int BasicTree::getNonTerm(){ return this->non_term; }
 
     /* Métodos */
-void Tree::insertChild(Tree& t){
+void BasicTree::insertChild(const BasicTree& t){
     this->children.push_back(t);
 }
 
-optional<Tree> Tree::getChild(int index){
+optional<BasicTree> BasicTree::getChild(int index){
     try{
         return this->children.at(index);
     } catch (const out_of_range& e) {
@@ -32,11 +33,11 @@ optional<Tree> Tree::getChild(int index){
     }
 }
 
-vector<Tree>& Tree::getChildren(){
+vector<BasicTree>& BasicTree::getChildren(){
     return this->children;
 }
 
-bool Tree::matchTree(Tree& root){
+bool BasicTree::matchTree(BasicTree& root){
     if( this->type == root.type ){
         if( (this->type == Node_type::operacao || this->type == Node_type::especifico) 
         && this->name != root.name ){
@@ -44,8 +45,8 @@ bool Tree::matchTree(Tree& root){
         }
 
         for( int i=0; i<this->getChildren().size(); i++ ){
-            Tree c1 = this->getChild(i).value();
-            optional<Tree> c2 = root.getChild(i);
+            BasicTree c1 = this->getChild(i).value();
+            optional<BasicTree> c2 = root.getChild(i);
 
             if( !c2.has_value() ){ return false; }
 
@@ -61,14 +62,14 @@ bool Tree::matchTree(Tree& root){
 
 
     /* Overloads de operadores */
-ostream& operator<<(ostream& out, Tree& tree){
+ostream& operator<<(ostream& out, BasicTree& tree){
     out << tree.name << " (" << (int)tree.type << ")";
     int children = tree.getChildren().size();
     
     if( children > 0 ){ out << "(" << tree.action << " "; }
 
     for( int i=0; i<children; i++){
-        Tree t = tree.getChild(i).value();
+        BasicTree t = tree.getChild(i).value();
         out << t;
         if(i < children - 1){
             out << ", ";
