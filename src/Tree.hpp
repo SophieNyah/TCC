@@ -16,11 +16,11 @@ class TemplateTree{
 
     protected:
 
-        vector<T> children;
-        Node_type type;
-        string name;
         int non_term;
+        string name;
+        vector<T> children;
         code_t action;
+        Node_type type;
 
     public:
 
@@ -39,8 +39,14 @@ class TemplateTree{
         Node_type getType(){ return this->type; }
         int getNonTerm(){ return this->non_term; }
 
+            /* Atributos */
+        int children_size;
+
             /* Métodos */
-        void insertChild(const T& c){ this->children.push_back(c); }
+        void insertChild(const T& c){
+            this->children.push_back(c);
+            this->children_size++;
+        }
         
         optional<T> getChild(int index){
             try{
@@ -91,6 +97,7 @@ class VirtualTree: public TemplateTree<U>{
 
         virtual ~VirtualTree() = default;
 
+        Cost_expression cost;
 };
 
 #endif
