@@ -28,6 +28,7 @@ using namespace generator;
 "]"  { return parser::token::R_SBRACKET; }
 ";"  { return parser::token::SEMI_COLON; }
 ","  { return parser::token::COMMA; }
+":"  { return parser::token::COLON; }
 
     /* Símbolos declarativos */
 "%term"    { return parser::token::NEW_TERM; }
@@ -68,9 +69,6 @@ using namespace generator;
 [0-9]+  { yylval->emplace<int>(std::atoi(yytext)); return parser::token::INTEGER; }
 
     /* Identificador */
-c[0-9]+                { yylval->emplace<std::string>(yytext); return parser::token::CONSTANT_ID; }
-r[0-9]+                { yylval->emplace<std::string>(yytext); return parser::token::REGISTER_ID; }
-#[_a-zA-Z0-9]          { yylval->emplace<std::string>(yytext); return parser::token::SPECIFIC_ID; }
 [_a-zA-Z][_a-zA-Z0-9]* { yylval->emplace<std::string>(yytext); return parser::token::IDENTIFIER; }
 
 	/* misc */

@@ -51,6 +51,7 @@
 %token R_SBRACKET
 %token SEMI_COLON
 %token COMMA
+%token COLON
 
 %token <std::string> CPP_CODE
 %token <int> INTEGER
@@ -97,16 +98,34 @@ header: header  header_new_token {}
             code_t code{ Helper::trim($2.substr(1, $2.size()-2)) };
             Helper::setHeader(code);
         }
+      | CPP_CODE                 {
+            code_t code{ Helper::trim($1.substr(1, $1.size()-2)) };
+            Helper::setHeader(code);
+      }
       | header_new_token         {}
 ;
 header_new_token: NEW_TERM  IDENTIFIER     { Helper::newTerm($2); }
                 | NEW_NON_TERM  IDENTIFIER { Helper::newNonTerm($2); }
 ;
 
-rule: DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  TREE_PATTERN_SEPARATOR  tree  DL_PATTERN  cost  DL_RULE
-        { Helper::newRule(Rule{ $2, $4, $7, $5, Helper::trim($9.substr(1, $9.size()-2)) }); }
-    | rule DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  TREE_PATTERN_SEPARATOR  tree  DL_PATTERN  cost  DL_RULE
-        { Helper::newRule(Rule{ $3, $5, $8, $6, Helper::trim($10.substr(1, $10.size()-2)) }); }
+rule: DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace action
+      TREE_PATTERN_SEPARATOR  IDENTIFIER  COLON  tree  DL_PATTERN  cost  DL_RULE
+        {
+            if(!Helper::isNonTerm($8)){
+                Helper::semanticError("Symbol \"" + $8 + "\" not declared");
+            }
+
+            Helper::newRule(Rule{ $2, $4, $10, $8, $6, $5, Helper::trim($12.substr(1, $12.size()-2)) });
+        }
+    | rule DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  action
+      TREE_PATTERN_SEPARATOR  IDENTIFIER  COLON  tree  DL_PATTERN  cost  DL_RULE
+        {
+            if(!Helper::isNonTerm($9)){
+                Helper::semanticError("Symbol \"" + $9 + "\" not declared");
+            }
+
+            Helper::newRule(Rule{ $3, $5, $11, $9, $7, $6, Helper::trim($13.substr(1, $13.size()-2)) });
+        }
 ;
 
 pattern: L_SBRACKET  pattern_rule  R_SBRACKET { $$ = $2; }
@@ -143,8 +162,8 @@ register_name: IDENTIFIER { $$ = $1; }
 
 tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET
         { 
-            if(!Helper::isNonTerm($1.first)){
-                Helper::semanticError("Symbol \"" + $1.first + "\" not declared as non-terminal");
+            if(!Helper::isNonTerm($1.first) && !Helper::isTerm($1.first)){
+                Helper::semanticError("Symbol \"" + $1.first + "\" not declared");
             }
 
             $$ = BasicTree{$1.first, 0, Node_type{ $1.second }, $3};

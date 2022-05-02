@@ -18,7 +18,7 @@
 //     : name{ name }, non_term{ non_term }, type{ type }{}
 
 // template<typename T>    
-// TemplateTree<T>::TemplateTree(const string& name, const Non_terminals non_term, const Node_type& type)
+// TemplateTree<T>::TemplateTree(const string& name, const User_Symbols non_term, const Node_type& type)
 //     : name{ name }, non_term{ (int)non_term }, type{ type }{}
 
 // template<typename T>    
@@ -51,7 +51,7 @@ BasicTree::BasicTree()
 BasicTree::BasicTree(const string& name, const int non_term, const Node_type& type)
     : TemplateTree{ name, non_term, type }{}
 
-BasicTree::BasicTree(const string& name, const Non_terminals non_term, const Node_type& type)
+BasicTree::BasicTree(const string& name, const User_Symbols non_term, const Node_type& type)
     : TemplateTree{ name, non_term, type }{}
 
 BasicTree::BasicTree(const string& name, const int non_term, const Node_type& type, const code_t& action)

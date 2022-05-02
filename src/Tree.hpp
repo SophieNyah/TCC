@@ -3,20 +3,18 @@
 
 #include<string>
 #include<vector>
+#include<limits>
 #include<optional>
 #include"types.hpp"
 
 using namespace std;
-
-enum class Node_type{ operacao, registrador, constante, especifico };
-enum class Non_terminals: int;
 
 template<typename T>
 class TemplateTree{
 
     protected:
 
-        int non_term;
+        int user_symbol;
         string name;
         vector<T> children;
         code_t action;
@@ -26,21 +24,22 @@ class TemplateTree{
 
             /* Construtores */
         TemplateTree(){}
-        TemplateTree(const string& name, const int non_term, const Node_type& type)
-            : name{ name }, non_term{ non_term }, type{ type }{}
-        TemplateTree(const string& name, const Non_terminals non_term, const Node_type& type)
-            : name{ name }, non_term{ (int)non_term }, type{ type }{}
-        TemplateTree(const string& name, const int non_term, const Node_type& type, const code_t& action)
-            : name{ name }, non_term{ non_term }, type{ type }, action{ action }{}
+        TemplateTree(const string& name, const int user_symbol, const Node_type& type)
+            : name{ name }, user_symbol{ user_symbol }, type{ type }{}
+        TemplateTree(const string& name, const User_Symbols user_symbol, const Node_type& type)
+            : name{ name }, user_symbol{ (int)user_symbol }, type{ type }{}
+        TemplateTree(const string& name, const int user_symbol, const Node_type& type, const code_t& action)
+            : name{ name }, user_symbol{ user_symbol }, type{ type }, action{ action }{}
 
 
             /* Getters/Setters */
         string getName(){ return this->name; }
         Node_type getType(){ return this->type; }
-        int getNonTerm(){ return this->non_term; }
+        int getSymbol(){ return this->user_symbol; }
+        code_t getAction(){ return this->action; }
 
             /* Atributos */
-        int children_size;
+        int children_size{0};
 
             /* Métodos */
         void insertChild(const T& c){
@@ -56,17 +55,13 @@ class TemplateTree{
                 return std::nullopt;
             }
         }
+
+        T& getChildReference(int index){
+            return this->children.at(index);
+        }
         
         vector<T>& getChildren(){ return this->children; }
 
-};
-
-
-struct Cost_expression{
-    vector<int> cost_directives;
-    int integer_part;
-    Cost_expression(){}
-    Cost_expression(vector<int> c, int i=0):cost_directives{ c }, integer_part{ i }{}
 };
 
 
@@ -74,7 +69,7 @@ class BasicTree: public TemplateTree<BasicTree>{
     public:
         BasicTree();
         BasicTree(const string& name, const int non_term, const Node_type& type);
-        BasicTree(const string& name, const Non_terminals non_term, const Node_type& type);
+        BasicTree(const string& name, const User_Symbols non_term, const Node_type& type);
         BasicTree(const string& name, const int non_term, const Node_type& type, const code_t& action);  
 
         Cost_expression cost;  
@@ -84,20 +79,39 @@ class BasicTree: public TemplateTree<BasicTree>{
 template<typename U>
 class VirtualTree: public TemplateTree<U>{
 
+    private:
+
+        int& _getChildCost(int& child){
+            if(child == 0) return this->matched_rules.at(0).second;
+
+            for( U& c: this->getChildren() ){
+                child--;
+                int& value = c._getChildCost(child);
+                if(child==0) return value;
+            }
+        }
+
     protected:
 
         VirtualTree(){}
-        VirtualTree(const string& name, const Non_terminals non_term, const Node_type& type)
+        VirtualTree(const string& name, const User_Symbols non_term, const Node_type& type)
             : TemplateTree<U>{ name, non_term, type }
             {}
             
     public:
 
-        virtual U readTree() = 0;
+        virtual U readTree(U& tree) = 0;
 
         virtual ~VirtualTree() = default;
 
-        Cost_expression cost;
+        MyArray<int> non_terminal{};
+        MyArray<pair<Rules, cost_t>> matched_rules{ pair<Rules, cost_t>{static_cast<Rules>(-1), numeric_limits<cost_t>::max()} };
+        cost_t cost{ 0 };
+        Cost_expression cost_expression{};
+
+        int& getChildCost(int child){
+            return this->_getChildCost(child);
+        }
 };
 
 #endif

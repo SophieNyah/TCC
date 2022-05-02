@@ -4,6 +4,9 @@
 #include<vector>
 #include<map>
 #include<memory>
+#include<iomanip>
+#include<algorithm>
+#include<regex>
 #include"CodeGen.hpp"
 #include"Helper.hpp"
 #include"Tree.hpp"
@@ -22,7 +25,7 @@ namespace{
 
         /* Variáveis locais */
     fstream out_file{ "saida.cpp" };
-    map<string, int> nonTerms{};
+    map<string, int> user_symbols{};
     vector<final_state_t> final_states{};
 
 
@@ -37,8 +40,12 @@ namespace{
     }
 
     void generateNonTermsMap(){
-        MyArray<string> nt = Helper::getNonTerms();
-        for( int i=0; i<nt.size(); i++ ) nonTerms.insert(pair<string, int>{ nt.at(i), i });
+        int i=0;
+        MyArray<string> terms = Helper::getTerms();
+        for( ; i<terms.size(); i++ ) user_symbols.insert(pair<string, int>{ terms.at(i), i });
+
+        MyArray<string> nonterms = Helper::getNonTerms();
+        for( int j=0; j<nonterms.size(); j++, i++ ) { user_symbols.insert(pair<string, int>{ nonterms.at(j), i }); }
     }
     
     string printTab(int n){
@@ -51,43 +58,61 @@ namespace{
     
     void startHeader(){
         /* Includes */
-        out_file << "#include\"./src/Tree.hpp\"\n\n";
+        out_file << "#include<map>\n"
+                 << "#include<limits>\n"
+                 << "#include\"./src/Tree.hpp\"\n\n";
+
 
         /* Enum de regras */
-        out_file << "enum class Rules {\n";
-        out_file << printTab(1) << "null = -1,\n";
+        out_file << "enum class Rules {\n"
+                 << "    null = -1,\n";
         for( Rule r: Helper::getRules() ){
             out_file << printTab(1) << r.getName() << " = " << r.getRuleNumber() << ",\n";
         }
         out_file << "};\n\n";
 
+
+        /* map de (regra, não-terminal) */
+        out_file << "const std::map<Rules, int> Rules_Non_Terminals{\n";
+        for( Rule r: Helper::getRules() ){
+            int num{ user_symbols.at(r.getSymbol()) };
+            out_file << printTab(1) << "{ Rules::" << r.getName() << ", " << num << " },\n";
+        }
+        out_file << "};\n\n";
+
+
+        /* Variáveis de delimitação do enum */
+        out_file << "const int TERMINALS_START     = " << 0 << ";\n";
+        out_file << "const int TERMINALS_END       = " << Helper::getTerms().size() - 1 << ";\n";
+        out_file << "const int NON_TERMINALS_START = " << Helper::getTerms().size() << ";\n";
+        out_file << "const int NON_TERMINALS_END   = " << user_symbols.size() - 1 << ";\n";
+
         /* Enum de não-terminais */
-        out_file << "enum class Non_terminals {\n";
+        out_file << "enum class User_Symbols {\n";
         out_file << printTab(1) << "null = -1,\n";
-        for( auto nt: nonTerms ){
-            out_file << printTab(1) << nt.first << " = " << nt.second << ",\n";
+        for( auto symbol: user_symbols ){
+            out_file << printTab(1) << symbol.first << " = " << symbol.second << ",\n";
         }
         out_file << "};\n\n";
         
+
         /* Header do usuário */
         out_file << Helper::getHeader() << "\n\n";
+
 
         /* Abre o namespace */
         out_file << "namespace Code_Generator{\n\n";
 
-        /* Aliases de tipos */
-        out_file << printTab(1) << "using cost_t = int;\n";
-        out_file << printTab(1) << "using rule_number_t = Rules;\n";
-        out_file << printTab(1) << "using MyPair = std::pair<rule_number_t, cost_t>;\n\n";
 
-        /* Função do cálculo do custo */
-        // out_file << "int calculateCost(Tree& tree){\n";
-        // out_file << printTab(1) << "int cost = 0 + tree.cost.integer_part;\n";
-        // out_file << printTab(1) << "for( int i: tree.cost.cost_directives ){\n";
-        // out_file << printTab(2) << "Tree t = tree.getChild(i).value();\n";
-        // out_file << printTab(2) << "cost += calculateCost(t);\n";
-        // out_file << printTab(1) << "}\n";
-        // out_file << "}\n\n";
+        /* Aliases de tipos */
+        out_file << "    using cost_t = int;\n"
+                 << "    using rule_number_t = Rules;\n"
+                 << "    using MyPair = std::pair<rule_number_t, cost_t>;\n"
+                 << '\n'
+                 << "    const int infinity{ std::numeric_limits<int>::max() };\n\n";
+
+        /* Declarações de funções */
+        out_file << "    cost_t cost(Rules, Tree);\n\n";
     }
     
     void endHeaderStartUserCode(){
@@ -102,10 +127,10 @@ namespace{
     void traverseTree(table_t* table, int& state, BasicTree& tree){
         MyArray<BasicTree> children = tree.getChildren();
         table_t tab = *table;
-        int column{ tree.getType() == Node_type::operacao  ?  nonTerms[tree.getName()]  :  (int)nonTerms.size() + (int)tree.getType() - 1 };
+        int column{ user_symbols[tree.getName()] };
 
         if( (*table)[state][column] == 0 ){
-            table->push_back(vector<int>( (int)nonTerms.size() + 3, 0 ));
+            table->push_back(vector<int>( (int)user_symbols.size(), 0 ));
             int newState = table->size() - 1;
             (*table)[state][column] = newState;
             state = newState;
@@ -120,7 +145,7 @@ namespace{
     
     unique_ptr<table_t> generateTable(MyArray<Rule>& rules){
             /* As colunas representam os não-terminais, seguidos dos Node_type registrador, constante, e especifico */
-        unique_ptr<table_t> table{ new table_t(1, vector<int>( (int)nonTerms.size() + 3, 0 )) };
+        unique_ptr<table_t> table{ new table_t(1, vector<int>( (int)user_symbols.size(), 0 )) };
 
         for( Rule r: rules ){
             BasicTree tree{ r.getPattern() };
@@ -138,12 +163,12 @@ namespace{
         int rows{ (int)table->size() };
         int columns{ (int)(*table)[0].size() };
 
-        out_file << printTab(1) << "int recognition_table[" << rows << "][" << columns << "]{\n";
+        out_file << printTab(1) << "const int recognition_table[" << rows << "][" << columns << "]{\n";
         
         for( int r=0; r<rows; r++ ){
-            out_file << printTab(2) << "{" << (*table)[r][0];
+            out_file << printTab(2) << "{" << std::setw(4) << (*table)[r][0];
             for( int c=1; c<columns; c++ ){
-                out_file << ", " << (*table)[r][c];
+                out_file << ", " << std::setw(4) << (*table)[r][c];
             }
             out_file << "},\n";
         }
@@ -151,38 +176,92 @@ namespace{
         out_file << printTab(1) << "};\n\n";
 
 
-        out_file << printTab(1) << "MyPair isFinalState(int state){\n";
+        out_file << printTab(1) << "MyPair isFinalState(int state, Tree t={}){\n";
         out_file << printTab(2) << "switch(state){\n";
 
         for( auto f: final_states ){
-            out_file << printTab(3) << "case " << f.first << ": return MyPair{ Rules::"
-                << f.second.first << ", 3 };\n";
+            out_file << printTab(3) << "case " << std::setw(4) << f.first << ": return MyPair{ Rules::"
+                << f.second.first << ", cost(Rules::" << f.second.first << ", t) };\n";
         }
         out_file << printTab(3) << "default: return MyPair{ Rules::null, -1 };\n";
 
         out_file << printTab(2) << "}\n";
         out_file << printTab(1) << "}\n\n";
     }
+    void printCost(){
+        out_file << "    int cost(Rules r, Tree t){\n"
+                 << "        switch(r){\n";
+        for( Rule r: Helper::getRules() ){
+            string costStr = r.getCost();
+            costStr = regex_replace( costStr, regex( "\\$cost\\[" ), "t.getChildCost(" );
+            costStr = regex_replace( costStr, regex( "\\]" ), ")" );
 
+            out_file << printTab(3) << "case Rules::" << r.getName() << " :\n"
+                     << printTab(4) << costStr << '\n'
+                     << printTab(4) << "break;\n";
+        }
+        out_file << "            default:\n"
+                 << "                t.getChildCost(0) = infinity;\n"
+                 << "                return infinity;\n"
+                 << "        }\n"
+                 << "    }\n\n";
+    }
     void printMatchTree(){
-        int t = 1;
-        out_file << printTab(t) << "int matchTree(Tree& t, int start_state=0){\n";            t++;
-        out_file << printTab(t) << "int node_type = t.getType() == Node_type::operacao ? t.getNonTerm() : 4 + (int)t.getType();\n";
-        out_file << printTab(t) << "int node_type = (int)t.getType();\n";
-        out_file << printTab(t) << "int state = recognition_table[start_state][node_type];\n";
-        out_file << printTab(t) << "if(state == 0){\n";                                       t++;
-        out_file << printTab(t) << "return false;\n";                                         t--;
-        out_file << printTab(t) << "}else{\n";                                                t++;
-        out_file << printTab(t) << "if(t.children_size > 0){\n";                              t++;
-        out_file << printTab(t) << "vector<Tree> children{ t.getChildren() };\n";
-        out_file << printTab(t) << "for( Tree c: children ){\n";                              t++;
-        out_file << printTab(t) << "state = matchTree(c, state);\n";                          
-        out_file << printTab(t) << "if(state == 0) return 0;\n";                              t--;
-        out_file << printTab(t) << "}\n";                                                     t--;
-        out_file << printTab(t) << "}\n";                                                     t--;
-        out_file << printTab(t) << "}\n";                                                     
-        out_file << printTab(t) << "return state;\n";                                         t--;
-        out_file << printTab(t) << "}\n";
+        out_file
+        << "    using SymbolArray = std::vector<int>; \n"
+        << "    using StateArray  = std::vector<int>; \n\n"
+
+        << "    StateArray matchTree(Tree& t, StateArray start_states=StateArray{0}){\n"
+        << "        SymbolArray symbols{ (int)t.getSymbol() };\n"
+        << "        for( int rule: t.non_terminal ) symbols.push_back(rule);\n"
+        << "        StateArray states{};\n"
+        << "        for( int symbol: symbols ){\n"
+        << "            for( int state: start_states ){\n"
+        << "                state = recognition_table[state][symbol];\n"
+        << "                if( state != 0 ) states.push_back(state);\n"
+        << "            }\n"
+        << "        }\n"
+        << "        for( Tree c: t.getChildren() ){\n"
+        << "            StateArray newStates{ matchTree(c, states) };\n"
+        << "            if(newStates.empty()){\n"
+        << "                return states;\n"
+        << "            }else{\n"
+        << "                states = newStates;\n"
+        << "            }\n"
+        << "        }\n"
+        << "        return states;\n"
+        << "    }\n\n";
+    }
+    void printLabel(){
+        out_file
+        << "    void label(Tree& t){\n"
+        << "        for( int i=0; i<t.children_size; i++ ){\n"
+        << "            Tree& c{ t.getChildReference(i) };\n"
+        << "            label(c);\n"
+        << "        }\n"
+        << "        for( int state: matchTree(t) ){\n"
+        << "            MyPair s{ isFinalState(state, t) };\n"
+        // << "            std::cout << "Node " << t.getName() << ", Rule " << (int)s.first << ": " << s.second << endl;\n"
+        << "            if( s.second <= t.matched_rules.at(0).second ){\n"
+        << "                t.matched_rules.insert(t.matched_rules.begin(), s);\n"
+        << "            }else{\n"
+        << "                t.matched_rules.push_back(s);\n"
+        << "            }\n"
+        << "            t.non_terminal.push_back(Rules_Non_Terminals.at(s.first));\n"
+        << "        }\n"
+        << "    }\n\n";
+    }
+    void printAction(){
+        out_file << "    int action(Rules r){\n"
+                 << "        switch(r){\n";
+        for( Rule r: Helper::getRules() ){
+            out_file << printTab(3) << "case Rules::" << r.getName() << " :\n"
+                     << printTab(4) << r.getAction() << '\n'
+                     << printTab(4) << "break;\n";
+        }
+        out_file << "            default: break;\n"
+                 << "        }\n"
+                 << "    }\n\n";
     }
 
 }
@@ -196,9 +275,12 @@ void CodeGenerator::generate(){
 
     MyArray<Rule> rules{ Helper::getRules() };
     unique_ptr<table_t> table = generateTable(rules);
-    printTableAndFinalStates(table.get());
 
+    printTableAndFinalStates(table.get());
+    printCost();
     printMatchTree();
+    printLabel();
+    printAction();
 
     endHeaderStartUserCode();
 }
