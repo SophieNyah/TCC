@@ -77,7 +77,7 @@ class BasicTree: public TemplateTree<BasicTree>{
 
 
 template<typename U>
-class VirtualTree: public TemplateTree<U>{
+class YamgTree: public TemplateTree<U>{
 
     private:
 

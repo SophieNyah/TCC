@@ -201,7 +201,7 @@ void generator::parser::error(const generator::location &c, const std::string& m
 
 
 
-int main()
+int main(int argc, char *argv[])
 {
 
     yyscan_t scanner;
@@ -211,7 +211,9 @@ int main()
     yylex_destroy(scanner);
 
     if(!Helper::getError()){
-        CodeGenerator::generate();
+        string out_name{};
+        if(argc > 1) out_name = argv[1];
+        CodeGenerator::generate(out_name);
     }
 
     return 0;

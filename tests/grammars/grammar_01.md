@@ -18,12 +18,12 @@ Node_type getNodeTypeFromStr(string s){
                     return Node_type::operacao;
 }
 
-class Tree: public VirtualTree<Tree>{
+class Tree: public YamgTree<Tree>{
     public:
 
         Tree(){}
         Tree(const string& name, const User_Symbols user_symbol, const Node_type& type)
-            : VirtualTree{ name, user_symbol, type }
+            : YamgTree{ name, user_symbol, type }
             {}
 
         std::pair<Tree, bool> readTreeRecursion(Tree& t){
@@ -105,7 +105,7 @@ ostream& operator<<(ostream& out, Tree& tree){
 %%
 
 $! regist $% 
-    [ADD $[regA, regB, conA$]] 1 { std::cout << "Registrador\n"; } <-
+    [ADD $[regA, regB, conA$]] 1 { std::cout << "ADD $r, $zero, C\n"; } <-
         reg: CONST
 $% { return 1; } $!
 
@@ -115,12 +115,12 @@ $! statement $%
 $% { return $cost[0]; } $!
 
 $! addConst  $%
-    [ADD $[regA, regB, regC$]] 3 { std::cout << "ADD constante\n"; } <-
+    [ADD $[regA, regB, regC$]] 3 { std::cout << "ADD $r, $r1, C\n"; } <-
         reg: ADD(reg, CONST)
 $% { return $cost[1] + 1; } $!
 
 $! addReg $% 
-    [ADD $[regA, regB, conA$]] 2 { std::cout << "ADD registrador\n"; } <-
+    [ADD $[regA, regB, conA$]] 2 { std::cout << "ADD $r, $r1, $r2\n"; } <-
         reg: ADD(reg, reg) 
 $% { return $cost[1] + $cost[2] + 1; } $!
 
@@ -157,7 +157,8 @@ int main(){
     Tree t{};
     t = t.readTree(t);
     label(t);
-    printLabels(t);
+    // printLabels(t);
+    reduce(t);
 }
 
 }

@@ -22,12 +22,8 @@ for grammar in $grammars;
 do
     echo -e "Running $grammar:"
     
-    if [ $print_to_terminal = true ];
-    then
-        echo -e `./$generator < $input_dir/$grammar`
-    else
-        `./$generator < $input_dir/$grammar > $output_dir/$grammar`
-    fi
+    name=${grammar%.*}
+    `./$generator $output_dir/$name < $input_dir/$grammar`
 
     echo -e ""
 done
