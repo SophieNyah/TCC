@@ -58,10 +58,14 @@ namespace{
     }
     
     void startHeader(string output_file_name){
+        string include_name{};
+        output_file_name = output_file_name.substr(output_file_name.find_last_of("/") + 1);
+        include_name = output_file_name;
+        
         /* Includes */
         out_file_cpp << "#include<map>\n"
                  << "#include<limits>\n"
-                 << "#include\"" << output_file_name << ".hpp\"\n"
+                 << "#include\"" << include_name << ".hpp\"\n"
                  << "#include\"../../src/Tree.hpp\"\n\n";
 
 
@@ -165,30 +169,34 @@ namespace{
         int rows{ (int)table->size() };
         int columns{ (int)(*table)[0].size() };
 
-        out_file_cpp << printTab(1) << "const int recognition_table[" << rows << "][" << columns << "]{\n";
-        
+        out_file_cpp << "    const int recognition_table[" << rows << "][" << columns << "]{\n";
         for( int r=0; r<rows; r++ ){
-            out_file_cpp << printTab(2) << "{" << std::setw(4) << (*table)[r][0];
+            out_file_cpp << "        {" << std::setw(4) << (*table)[r][0];
             for( int c=1; c<columns; c++ ){
                 out_file_cpp << ", " << std::setw(4) << (*table)[r][c];
             }
             out_file_cpp << "},\n";
         }
+        out_file_cpp << "    };\n\n";
 
-        out_file_cpp << printTab(1) << "};\n\n";
 
-
-        out_file_cpp << printTab(1) << "MyPair isFinalState(int state, Tree t={}){\n";
-        out_file_cpp << printTab(2) << "switch(state){\n";
-
+        out_file_cpp << "    MyPair isFinalState(int state, Tree t){\n"
+                     << "        switch(state){\n";
         for( auto f: final_states ){
-            out_file_cpp << printTab(3) << "case " << std::setw(4) << f.first << ": return MyPair{ Rules::"
+            out_file_cpp << "            case " << std::setw(4) << f.first << ": return MyPair{ Rules::"
                 << f.second.first << ", cost(Rules::" << f.second.first << ", t) };\n";
         }
-        out_file_cpp << printTab(3) << "default: return MyPair{ Rules::null, -1 };\n";
+        out_file_cpp << "            default: return MyPair{ Rules::null, -1 };\n"
+                     << "        }\n"
+                     << "    }\n\n";
 
-        out_file_cpp << printTab(2) << "}\n";
-        out_file_cpp << printTab(1) << "}\n\n";
+        out_file_cpp << "    bool isFinalState(int state){\n"
+                     << "        switch(state){\n";
+        for( auto f: final_states ) 
+            out_file_cpp << "            case " << std::setw(4) << f.first << ": return true;\n";
+        out_file_cpp << "            default: return false;\n"
+                     << "        }\n"
+                     << "    }\n\n";
     }
     void printCost(){
         out_file_cpp << "    int cost(Rules r, Tree t){\n"
@@ -213,7 +221,7 @@ namespace{
         << "    using SymbolArray = std::vector<int>; \n"
         << "    using StateArray  = std::vector<int>; \n\n"
 
-        << "    StateArray matchTree(Tree& t, StateArray start_states=StateArray{0}){\n"
+        << "    StateArray matchTree(Tree& t, StateArray& final_states, StateArray start_states=StateArray{0}){\n"
         << "        SymbolArray symbols{ (int)t.getSymbol() };\n"
         << "        for( int rule: t.non_terminal ) symbols.push_back(rule);\n"
         << "        StateArray states{};\n"
@@ -221,10 +229,11 @@ namespace{
         << "            for( int state: start_states ){\n"
         << "                state = recognition_table[state][symbol];\n"
         << "                if( state != 0 ) states.push_back(state);\n"
+        << "                if( isFinalState(state) ) final_states.push_back(state);\n"
         << "            }\n"
         << "        }\n"
         << "        for( Tree c: t.getChildren() ){\n"
-        << "            StateArray newStates{ matchTree(c, states) };\n"
+        << "            StateArray newStates{ matchTree(c, final_states, states) };\n"
         << "            if(newStates.empty()){\n"
         << "                return states;\n"
         << "            }else{\n"
@@ -241,7 +250,9 @@ namespace{
         << "            Tree& c{ t.getChildReference(i) };\n"
         << "            label(c);\n"
         << "        }\n"
-        << "        for( int state: matchTree(t) ){\n"
+        << "        StateArray final_states{};\n"
+        << "        matchTree(t, final_states);\n"
+        << "        for( int state: final_states ){\n"
         << "            MyPair s{ isFinalState(state, t) };\n"
         << "            if( s.second <= t.matched_rules.at(0).second ){\n"
         << "                t.matched_rules.insert(t.matched_rules.begin(), s);\n"
@@ -345,6 +356,13 @@ namespace{
                    
                    << "namespace Yamg{\n\n"
                    
+                   << "        /* Classe do usuário */\n"
+                   << "    class Tree;\n\n"
+                   
+                   << "        /* Enums */\n"
+                   << "    enum class Rules: int;\n"
+                   << "    enum class User_Symbols: int;\n\n"
+                   
                    << "        /* Aliases */\n"
                    << "    using cost_t = int;\n"
                    << "    using rule_number_t = Rules;\n"
@@ -352,13 +370,6 @@ namespace{
                    << "    using SymbolArray = std::vector<int>; \n"
                    << "    using StateArray  = std::vector<int>; \n"
                    << "    using RuleLimit_t = std::pair<int, User_Symbols>;\n\n"
-                   
-                   << "        /* Classe do usuário */\n"
-                   << "    class Tree;\n\n"
-                   
-                   << "        /* Enums */\n"
-                   << "    enum class Rules: int;\n"
-                   << "    enum class User_Symbols: int;\n\n"
                    
                    << "        /* Variáveis */\n"
                    << "    extern const int infinity;\n"
@@ -371,7 +382,7 @@ namespace{
                    << "    extern const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap;\n\n"
                    
                    << "        /* Funções */\n"
-                   << "    MyPair     isFinalState(int state, Tree=Tree());\n"
+                   << "    // MyPair     isFinalState(int state, Tree=Tree());\n"
                    << "    StateArray matchTree(Tree&, StateArray={0});\n"
                    << "    int    action(Rules r);\n"
                    << "    cost_t cost(Rules, Tree);\n"

@@ -93,8 +93,8 @@ class YamgTree: public TemplateTree<U>{
 
     protected:
 
-        VirtualTree(){}
-        VirtualTree(const string& name, const User_Symbols non_term, const Node_type& type)
+        YamgTree(){}
+        YamgTree(const string& name, const User_Symbols non_term, const Node_type& type)
             : TemplateTree<U>{ name, non_term, type }
             {}
             
@@ -102,7 +102,7 @@ class YamgTree: public TemplateTree<U>{
 
         virtual U readTree(U& tree) = 0;
 
-        virtual ~VirtualTree() = default;
+        virtual ~YamgTree() = default;
 
         MyArray<int> non_terminal{};
         MyArray<pair<Rules, cost_t>> matched_rules{ pair<Rules, cost_t>{static_cast<Rules>(-1), numeric_limits<cost_t>::max()} };
