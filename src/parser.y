@@ -67,22 +67,14 @@
 %start start
 
     /* Tipos das regras */
-%type <std::string> token
 %type <std::string> cost
 %type <std::string> action
-%type <int> replace
 
 %type <Rule> rule
 
 %type <std::pair<std::string, Node_type>> tree_token
 %type <BasicTree> tree
 %type <std::vector<BasicTree>> tree_list
-
-%type <vector<Pattern>> pattern
-%type <vector<Pattern>> pattern_rule
-
-%type <std::vector<std::string>> register
-%type <std::string> register_name
 
 %%
 
@@ -108,56 +100,38 @@ header_new_token: NEW_TERM  IDENTIFIER     { Helper::newTerm($2); }
                 | NEW_NON_TERM  IDENTIFIER { Helper::newNonTerm($2); }
 ;
 
-rule: DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace action
-      TREE_PATTERN_SEPARATOR  IDENTIFIER  COLON  tree  DL_PATTERN  cost  DL_RULE
+rule: IDENTIFIER  action TREE_PATTERN_SEPARATOR
+      IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON
         {
-            if(!Helper::isNonTerm($8)){
-                Helper::semanticError("Symbol \"" + $8 + "\" not declared");
+            std::string name{ $1 };
+            std::vector<Pattern> patterns{ std::vector<Pattern>{} };
+            BasicTree root{ $6 };
+            string non_term{ $4 };
+            code_t action{ $2 };
+            int replace{ -1 };
+            std::string cost{ Helper::trim($8.substr(1, $8.size()-2)) };
+            if(!Helper::isNonTerm(non_term)){
+                Helper::semanticError("Symbol \"" + non_term + "\" not declared");
             }
 
-            Helper::newRule(Rule{ $2, $4, $10, $8, $6, $5, Helper::trim($12.substr(1, $12.size()-2)) });
+            Helper::newRule(Rule{ name, patterns, root, non_term, action, replace, cost });
         }
-    | rule DL_RULE  IDENTIFIER  DL_PATTERN  pattern  replace  action
-      TREE_PATTERN_SEPARATOR  IDENTIFIER  COLON  tree  DL_PATTERN  cost  DL_RULE
+    | rule IDENTIFIER  action TREE_PATTERN_SEPARATOR
+      IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON
         {
-            if(!Helper::isNonTerm($9)){
-                Helper::semanticError("Symbol \"" + $9 + "\" not declared");
+            std::string name{ $2 };
+            std::vector<Pattern> patterns{ std::vector<Pattern>{} };
+            BasicTree root{ $7 };
+            string non_term{ $5 };
+            code_t action{ $3 };
+            int replace{ -1 };
+            std::string cost{ Helper::trim($9.substr(1, $9.size()-2)) };
+            if(!Helper::isNonTerm(non_term)){
+                Helper::semanticError("Symbol \"" + non_term + "\" not declared");
             }
 
-            Helper::newRule(Rule{ $3, $5, $11, $9, $7, $6, Helper::trim($13.substr(1, $13.size()-2)) });
+            Helper::newRule(Rule{ name, patterns, root, non_term, action, replace, cost });
         }
-;
-
-pattern: L_SBRACKET  pattern_rule  R_SBRACKET { $$ = $2; }
-;
-
-pattern_rule: pattern_rule  SEMI_COLON  token  DL_L_REGISTER  register  DL_R_REGISTER  
-                {
-                    if(!Helper::isTerm($3)){
-                        Helper::semanticError("Symbol \"" + $3 + "\" not declared as terminal");
-                    }
-
-                    Pattern p{$3, $5};
-                    $1.push_back(p);
-                    $$ = $1;
-                    // std::cout << "+++ " << $$.at(0) << " +++";
-                }
-            | token  DL_L_REGISTER  register  DL_R_REGISTER 
-                {
-                    if(!Helper::isTerm($1)){
-                        Helper::semanticError("Symbol \"" + $1 + "\" not declared as terminal");
-                    }
-
-                    Pattern p{$1, $3};
-                    $$.push_back(p);
-                }
-;
-
-register: register  COMMA  register_name { $1.push_back($3); $$ = $1; }
-        | register_name                { $$.push_back($1); }
-;
-
-register_name: IDENTIFIER { $$ = $1; }
 ;
 
 tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET
@@ -185,10 +159,6 @@ action: CPP_CODE { $$ = $1; }
 ;
 cost: CPP_CODE { $$ = $1; }
 ;
-
-replace: INTEGER { $$ = $1; }
-       | %empty  { $$ = -1; };
-token: IDENTIFIER { $$ = $1; };
 
 
 %%

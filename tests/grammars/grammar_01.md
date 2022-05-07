@@ -104,40 +104,33 @@ ostream& operator<<(ostream& out, Tree& tree){
 
 %%
 
-$! regist $% 
-    [ADD $[regA, regB, conA$]] 1 { std::cout << "ADD $r, $zero, C\n"; } <-
-        reg: CONST
-$% { return 1; } $!
+regist { std::cout << "addi $r, $zero, c\n"; } <-
+    reg: CONST,
+    { return 1; };
 
-$! statement $% 
-    [ADD $[regA, regB, conA$]] 1 { std::cout << "Statement\n"; } <-
-        stmt: reg
-$% { return $cost[0]; } $!
+statement { ; } <-
+    stmt: reg,
+    { return $cost[0]; };
 
-$! addConst  $%
-    [ADD $[regA, regB, regC$]] 3 { std::cout << "ADD $r, $r1, C\n"; } <-
-        reg: ADD(reg, CONST)
-$% { return $cost[1] + 1; } $!
+addConst { std::cout << "addi $ri, $rj, c\n"; } <-
+    reg: ADD(reg,CONST),
+    { return $cost[1] + 1; };
 
-$! addReg $% 
-    [ADD $[regA, regB, conA$]] 2 { std::cout << "ADD $r, $r1, $r2\n"; } <-
-        reg: ADD(reg, reg) 
-$% { return $cost[1] + $cost[2] + 1; } $!
+addReg { std::cout << "add $ri, $rj, $rk\n"; } <-
+    reg: ADD(reg,reg) ,
+    { return $cost[1] + $cost[2] + 1; };
 
-$! loadAdd $%
-    [ADD $[ s1, s2 $]; MEM $[ s3, s2 $]] { std::cout << "LOAD ADD\n"; } <-
-        stmt: MEM( ADD( reg, CONST ), reg )
-$% { return $cost[2] + $cost[4] + 2; } $!
+loadAdd { std::cout << "lw $ri, c($rj)\n"; } <-
+    reg: MEM(ADD(reg,CONST)),
+    { return $cost[2] + 2; };
 
-$! loadReg $%
-    [ADD $[ s1, s2 $]; MEM $[ s3, s2 $]] { std::cout << "LOAD registrador\n"; } <-
-        stmt: MEM( reg, reg )
-$% { return $cost[1] + $cost[2] + 2; } $!
+loadReg { std::cout << "lw, $ri, 0($rj)\n"; } <-
+    reg: MEM(reg),
+    { return $cost[1] + 1; };
 
-$! mul $%
-    [ADD $[ s1, s2 $]; MEM $[ s3, s2 $]] { std::cout << "MUL\n"; } <-
-        reg: MUL( reg, reg )
-$% { return $cost[1] + $cost[2] + 2; } $!
+mul { std::cout << "mul $ri, $rj, $rk\n"; } <-
+    reg: MUL(reg,reg),
+    { return $cost[1] + $cost[2] + 2; };
 
 %%
 
@@ -145,19 +138,10 @@ $% { return $cost[1] + $cost[2] + 2; } $!
 
 using namespace Code_Generator;
 
-void printLabels(Tree t){
-    std::cout << "labels de " << t.getName() << "(";
-    for( auto rule: t.matched_rules ) std::cout << (int)rule.first << ", ";
-    std::cout << ")\n";
-
-    for( Tree t: t.getChildren()) printLabels(t);
-}
-
 int main(){
     Tree t{};
     t = t.readTree(t);
     label(t);
-    // printLabels(t);
     reduce(t);
 }
 
