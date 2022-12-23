@@ -38,3 +38,9 @@ clean:
 	rm -f src/scanner.hpp
 	rm -f src/location.hh
 	rm -f output/*
+
+clean_tests:
+	rm -f tests/grammar_outputs/*.hpp
+	rm -f tests/grammar_outputs/*.cpp
+
+clean_all: clean clean_tests
