@@ -64,7 +64,9 @@ scanner.cpp
 scanner.hpp
 generator
 tests/grammar_outputs/*
-!tests/grammar_outputs/.gitkeep
+output/grammars/*
+output/src/*
+!.gitkeep
 location.hh
 .vscode/*
 CodeGen old.cpp

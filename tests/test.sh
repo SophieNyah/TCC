@@ -15,15 +15,16 @@ base_dir=`dirname "$0"`
 input_dir="$base_dir/grammars"
 grammars=`ls $input_dir`
 
-generator="$base_dir/../output/generator"
-output_dir="$base_dir/grammar_outputs"
+generator="$base_dir/../output/src/generator"
+grammar_output_dir="$base_dir/../output/grammars"
 
 for grammar in $grammars;
 do
     echo -e "Running $grammar:"
     
     name=${grammar%.*}
-    `./$generator $output_dir/$name < $input_dir/$grammar`
+    `./$generator $grammar_output_dir/$name < $input_dir/$grammar`
+    `g++ --std=c++17 $grammar_output_dir/$name.cpp -o $grammar_output_dir/$name.o`
 
     echo -e ""
 done

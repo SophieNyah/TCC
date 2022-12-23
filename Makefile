@@ -12,7 +12,7 @@ SINTATICO = parser.y
 SINTATICO_FLAGS = --output=src/parser.cpp -d
 
 OBJECTS = Helper.o Rule.o Tree.o CodeGen.o parser.o scanner.o
-OUT_PATH=./output
+OUT_PATH=./output/src
 SRC_PATH=./src
 
 
@@ -37,10 +37,12 @@ clean:
 	rm -f src/scanner.cpp
 	rm -f src/scanner.hpp
 	rm -f src/location.hh
-	rm -f output/*
+	rm -f output/src/*.o
+	rm -f output/src/generator
 
 clean_tests:
-	rm -f tests/grammar_outputs/*.hpp
-	rm -f tests/grammar_outputs/*.cpp
+	rm -f output/grammars/*.hpp
+	rm -f output/grammars/*.cpp
+	rm -f output/grammars/*.o
 
 clean_all: clean clean_tests
