@@ -52,6 +52,7 @@
 %token SEMI_COLON
 %token COMMA
 %token COLON
+%token EQUALS
 
 %token <std::string> CPP_CODE
 %token <int> INTEGER
@@ -100,32 +101,32 @@ header_new_token: NEW_TERM  IDENTIFIER     { Helper::newTerm($2); }
                 | NEW_NON_TERM  IDENTIFIER { Helper::newNonTerm($2); }
 ;
 
-rule: IDENTIFIER  action TREE_PATTERN_SEPARATOR
-      IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON
+/* rule: IDENTIFIER  action TREE_PATTERN_SEPARATOR IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON */
+rule: IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action SEMI_COLON
         {
             std::string name{ $1 };
             std::vector<Pattern> patterns{ std::vector<Pattern>{} };
-            BasicTree root{ $6 };
-            string non_term{ $4 };
-            code_t action{ $2 };
+            BasicTree root{ $5 };
+            string non_term{ $3 };
+            code_t action{ $8 };
             int replace{ -1 };
-            std::string cost{ Helper::trim($8.substr(1, $8.size()-2)) };
+            std::string cost{ Helper::trim($6.substr(1, $6.size()-2)) };
             if(!Helper::isNonTerm(non_term)){
                 Helper::semanticError("Symbol \"" + non_term + "\" not declared");
             }
 
             Helper::newRule(Rule{ name, patterns, root, non_term, action, replace, cost });
         }
-    | rule IDENTIFIER  action TREE_PATTERN_SEPARATOR
-      IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON
+       /* | rule IDENTIFIER  action TREE_PATTERN_SEPARATOR IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON */
+       | rule IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action SEMI_COLON
         {
             std::string name{ $2 };
             std::vector<Pattern> patterns{ std::vector<Pattern>{} };
-            BasicTree root{ $7 };
-            string non_term{ $5 };
-            code_t action{ $3 };
+            BasicTree root{ $6 };
+            string non_term{ $4 };
+            code_t action{ $9 };
             int replace{ -1 };
-            std::string cost{ Helper::trim($9.substr(1, $9.size()-2)) };
+            std::string cost{ Helper::trim($7.substr(1, $7.size()-2)) };
             if(!Helper::isNonTerm(non_term)){
                 Helper::semanticError("Symbol \"" + non_term + "\" not declared");
             }

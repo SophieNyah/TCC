@@ -29,6 +29,7 @@ using namespace generator;
 ";"  { return parser::token::SEMI_COLON; }
 ","  { return parser::token::COMMA; }
 ":"  { return parser::token::COLON; }
+"="  { return parser::token::EQUALS; }
 
     /* Símbolos declarativos */
 "%term"    { return parser::token::NEW_TERM; }
