@@ -32,13 +32,14 @@ namespace{
 
         /* Funções locais */
 
-    int calculateCost(BasicTree& tree){
-        int cost = 0 + tree.cost.integer_part;
-        for( int i: tree.cost.cost_directives ){
-            BasicTree t = tree.getChild(i).value();
-            cost += calculateCost(t);
-        }
-    }
+    // int calculateCost(BasicTree& tree){
+    //     int cost = 0 + tree.cost.integer_part;
+    //     for( int i: tree.cost.cost_directives ){
+    //         BasicTree t = tree.getChild(i).value();
+    //         cost += calculateCost(t);
+    //     }
+    //     return cost;
+    // }
 
     void generateNonTermsMap(){
         int i=0;
@@ -273,6 +274,7 @@ namespace{
         }
         out_file_cpp << "            default: break;\n"
                  << "        }\n"
+                 << "        return 0;"
                  << "    }\n\n";
     }
     

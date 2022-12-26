@@ -5,6 +5,7 @@
 #include<vector>
 #include<limits>
 #include<optional>
+#include<cassert>
 #include"types.hpp"
 
 using namespace std;
@@ -84,11 +85,15 @@ class YamgTree: public TemplateTree<U>{
         int& _getChildCost(int& child){
             if(child == 0) return this->matched_rules.at(0).second;
 
-            for( U& c: this->getChildren() ){
+            vector<U> children = this->getChildren();
+            assert((children.size() >= child) && "Árvore não tem tantos filhos!");
+
+            for( U& c: children ){
                 child--;
                 int& value = c._getChildCost(child);
                 if(child==0) return value;
             }
+            return this->matched_rules.at(0).second; // linha para o compilad or não reclamar
         }
 
     protected:
