@@ -7,9 +7,9 @@ User_Symbols getSymbolFromStr(string s){
     if(s == "MUL")  return User_Symbols::MUL;
     if(s == "DIV")  return User_Symbols::DIV;
     if(s == "MEM")  return User_Symbols::MEM;
-    if(s == "CONST")  return User_Symbols::CONST;
+    if(s == "CONST")return User_Symbols::CONST;
     if(s == "reg")  return User_Symbols::reg;
-    if(s == "stmt")  return User_Symbols::stmt;
+                    return User_Symbols::stmt;
 }
 Node_type getNodeTypeFromStr(string s){
     if(s == "c")    return Node_type::constante;
@@ -104,33 +104,31 @@ ostream& operator<<(ostream& out, Tree& tree){
 
 %%
 
-regist { std::cout << "addi $r, $zero, c\n"; } <-
-    reg: CONST,
-    { return 1; };
+regist <- reg: CONST { return 1; } = {
+    std::cout << "addi $r, $zero, c\n";
+};
 
-statement { ; } <-
-    stmt: reg,
-    { return $cost[0]; };
+statement <- stmt: reg { return $cost[0]; } = { ; };
 
-addConst { std::cout << "addi $ri, $rj, c\n"; } <-
-    reg: ADD(reg,CONST),
-    { return $cost[1] + 1; };
+addConst <- reg: ADD(reg,CONST) { return $cost[1] + 1; } = {
+    std::cout << "addi $ri, $rj, c\n";
+};
 
-addReg { std::cout << "add $ri, $rj, $rk\n"; } <-
-    reg: ADD(reg,reg) ,
-    { return $cost[1] + $cost[2] + 1; };
+addReg <- reg: ADD(reg,reg) { return $cost[1] + $cost[2] + 1; } = {
+    std::cout << "add $ri, $rj, $rk\n";
+};
 
-loadAdd { std::cout << "lw $ri, c($rj)\n"; } <-
-    reg: MEM(ADD(reg,CONST)),
-    { return $cost[2] + 2; };
+loadAdd <- reg: MEM(ADD(reg,CONST)) { return $cost[2] + 2; } = {
+    std::cout << "lw $ri, c($rj)\n";
+};
 
-loadReg { std::cout << "lw, $ri, 0($rj)\n"; } <-
-    reg: MEM(reg),
-    { return $cost[1] + 1; };
+loadReg <- reg: MEM(reg) { return $cost[1] + 1; } = {
+    std::cout << "lw, $ri, 0($rj)\n";
+};
 
-mul { std::cout << "mul $ri, $rj, $rk\n"; } <-
-    reg: MUL(reg,reg),
-    { return $cost[1] + $cost[2] + 2; };
+mul <- reg: MUL(reg,reg) { return $cost[1] + $cost[2] + 2; } = {
+    std::cout << "mul $ri, $rj, $rk\n";
+};
 
 %%
 

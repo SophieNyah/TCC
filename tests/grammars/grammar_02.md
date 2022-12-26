@@ -11,10 +11,11 @@ User_Symbols getSymbolFromStr(string s){
     if(s == "FP")   return User_Symbols::FP;
     if(s == "VAR")  return User_Symbols::VAR;
     if(s == "reg")  return User_Symbols::reg;
-    if(s == "stmt") return User_Symbols::stmt;
+                    return User_Symbols::stmt;
 }
 Node_type getNodeTypeFromStr(string s){
     if(s == "c") return Node_type::constante;
+                 return Node_type::constante;
 }
 
 class Tree: public YamgTree<Tree>{
@@ -105,94 +106,86 @@ ostream& operator<<(ostream& out, Tree& tree){
 
 %%
 
-addConstRight { std::cout << "addi $ri, $rj, c\n"; } <- 
-    reg: ADD(reg, CONST),
-    { return $cost[1] + 1; };
+addConstRight <- reg: ADD(reg, CONST) { return $cost[1] + 1; } = {
+    std::cout << "addi $ri, $rj, c\n";
+};
 
-addConstLeft { std::cout << "addi $ri, $rj, c\n"; } <-
-    reg: ADD(CONST, reg),
-    { return $cost[2] + 1; };
+addConstLeft <- reg: ADD(CONST, reg) { return $cost[2] + 1; } = {
+    std::cout << "addi $ri, $rj, c\n";
+};
 
-addReg { std::cout << "add $ri, $rj, $rk\n"; } <-
-    reg: ADD(reg, reg),
-    { return $cost[1] + $cost[2] + 1; };
-
-
-
-mul { std::cout << "mul $ri, $rj, $rk\n"; } <-
-    reg: MUL( reg, reg ),
-    { return $cost[1] + $cost[2] + 1; };
+addReg <- reg: ADD(reg, reg) { return $cost[1] + $cost[2] + 1; } = {
+    std::cout << "add $ri, $rj, $rk\n";
+};
 
 
 
-sub { std::cout << "sub $ri, $rj, $rk\n"; } <-
-    reg: SUB( reg, reg ),
-    { return $cost[1] + $cost[2] + 1; };
-
-subConst { std::cout << "sub $ri, $rj, c\n"; } <-
-    reg: SUB( reg, CONST ),
-    { return $cost[1] + 1; };
+mul <- reg: MUL( reg, reg ) { return $cost[1] + $cost[2] + 1; } = {
+    std::cout << "mul $ri, $rj, $rk\n";
+};
 
 
 
-loadAddConstRight { std::cout << "lw $ri, c($rj)\n"; } <-
-    reg: MEM( ADD( reg, CONST ) ),
-    { return $cost[2] + 1; };
+sub <- reg: SUB( reg, reg ) { return $cost[1] + $cost[2] + 1; } = {
+    std::cout << "sub $ri, $rj, $rk\n";
+};
 
-loadAddConstLeft { std::cout << "lw $ri, c($rj)\n"; } <-
-    reg: MEM( ADD( CONST, reg ) ),
-    { return $cost[3] + 1; };
-
-loadConst { std::cout << "lw $ri, c(0)\n"; } <-
-    reg: MEM( CONST ),
-    { return 1; };
-
-loadReg { std::cout << "lw, $ri, 0($rj)\n"; } <-
-    reg: MEM( reg ),
-    { return $cost[1] + 1; };
+subConst <- reg: SUB( reg, CONST ) { return $cost[1] + 1; } = {
+    std::cout << "sub $ri, $rj, c\n";
+};
 
 
 
-storeMemAddConstRight { std::cout << "sw, $ri, c($rj)\n"; } <-
-    stmt: MOVE( MEM( ADD(reg,CONST) ), reg ),
-    { return $cost[3] + $cost[5] + 2; };
+loadAddConstRight <- reg: MEM( ADD( reg, CONST ) ) { return $cost[2] + 1; } = {
+    std::cout << "lw $ri, c($rj)\n";
+};
 
-storeMemAddConstLeft { std::cout << "sw, $ri, c($rj)\n"; } <-
-    stmt: MOVE( MEM( ADD(CONST,reg) ), reg ),
-    { return $cost[4] + $cost[5] + 2; };
+loadAddConstLeft <- reg: MEM( ADD( CONST, reg ) ) { return $cost[3] + 1; } = { 
+    std::cout << "lw $ri, c($rj)\n";
+};
 
-storeMemConst { std::cout << "sw, $ri, c(0)\n"; } <-
-    stmt: MOVE( MEM( CONST ), reg ),
-    { return $cost[3] + 2; };
+loadConst <- reg: MEM( CONST ) { return 1; } = {
+    std::cout << "lw $ri, c(0)\n";
+};
 
-storeMemReg 
-     { std::cout << "sw, $ri, $rj\n"; } <-
-    stmt: MOVE( MEM( reg ), reg ),
-    { return $cost[3] + $cost[2] + 2; };
-
-moveMemMem { std::cout << "move, $ri, $rj\n"; } <-
-    stmt: MOVE( MEM( reg ), MEM( reg ) ),
-    { return $cost[2] + $cost[4] + 3; };
+loadReg <- reg: MEM( reg ) { return $cost[1] + 1; } = {
+    std::cout << "lw, $ri, 0($rj)\n";
+};
 
 
 
+storeMemAddConstRight <- stmt: MOVE( MEM( ADD(reg,CONST) ), reg ) { return $cost[3] + $cost[5] + 2; } = {
+    std::cout << "sw, $ri, c($rj)\n";
+};
+
+storeMemAddConstLeft <- stmt: MOVE( MEM( ADD(CONST,reg) ), reg ) { return $cost[4] + $cost[5] + 2; } = {
+    std::cout << "sw, $ri, c($rj)\n";
+};
+
+storeMemConst <- stmt: MOVE( MEM( CONST ), reg ) { return $cost[3] + 2; } = {
+    std::cout << "sw, $ri, c(0)\n";
+};
+
+storeMemReg <- stmt: MOVE( MEM( reg ), reg ) { return $cost[3] + $cost[2] + 2; } = {
+    std::cout << "sw, $ri, $rj\n";
+};
+
+moveMemMem <- stmt: MOVE( MEM( reg ), MEM( reg ) ) { return $cost[2] + $cost[4] + 3; } = {
+    std::cout << "move, $ri, $rj\n";
+};
 
 
-statement { std::cout << "Statement\n"; } <-
-    stmt: reg,
-    { return $cost[0]; };
+statement <- stmt: reg { return $cost[0]; } = {
+    std::cout << "Statement\n";
+};
 
-framePointer { ; } <-
-    reg: FP,
-    { return 0; };
+framePointer <- reg: FP { return 0; } = { ; };
 
-variable { ; } <-
-    reg: VAR,
-    { return 0; };
+variable <- reg: VAR { return 0; } = { ; };
 
-constant { std::cout << "addi $ri, $zero, c\n"; } <-
-    reg: CONST,
-    { return 1; };
+constant <- reg: CONST { return 1; } = {
+    std::cout << "addi $ri, $zero, c\n";
+};
 
 %%
 
