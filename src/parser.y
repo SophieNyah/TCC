@@ -28,6 +28,7 @@
 #include<algorithm>
 #include"scanner.hpp"
 #include"Helper.hpp"
+#include"RegAlloc.hpp"
 #include"CodeGen.hpp"
 
 %}
@@ -43,6 +44,7 @@
 
 %token NEW_TERM
 %token NEW_NON_TERM
+%token NEW_REGISTER
 
 %token TREE_PATTERN_SEPARATOR
 %token L_BRACKET
@@ -79,7 +81,7 @@
 
 %%
 
-start: header  DL_INPUT  rule  DL_INPUT  CPP_CODE  END_OF_FILE  {
+start: header  DL_INPUT  rule  DL_INPUT  CPP_CODE registers_declaration END_OF_FILE  {
             code_t code{ Helper::trim($5.substr(1, $5.size()-2)) };
             Helper::setCode(code);
             return Helper::getError() ? 0 /*false*/ : 1 /*true*/;
@@ -101,7 +103,6 @@ header_new_token: NEW_TERM  IDENTIFIER     { Helper::newTerm($2); }
                 | NEW_NON_TERM  IDENTIFIER { Helper::newNonTerm($2); }
 ;
 
-/* rule: IDENTIFIER  action TREE_PATTERN_SEPARATOR IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON */
 rule: IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action SEMI_COLON
         {
             std::string name{ $1 };
@@ -117,7 +118,6 @@ rule: IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action
 
             Helper::newRule(Rule{ name, patterns, root, non_term, action, replace, cost });
         }
-       /* | rule IDENTIFIER  action TREE_PATTERN_SEPARATOR IDENTIFIER  COLON  tree  COMMA  cost  SEMI_COLON */
        | rule IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action SEMI_COLON
         {
             std::string name{ $2 };
@@ -133,6 +133,14 @@ rule: IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action
 
             Helper::newRule(Rule{ name, patterns, root, non_term, action, replace, cost });
         }
+;
+
+registers_declaration: DL_INPUT registers_block {}
+                     | %empty {}
+;
+registers_block: NEW_REGISTER IDENTIFIER {
+                    RegAlloc::_newReg($2);
+                }
 ;
 
 tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET

@@ -3,7 +3,6 @@
 
 User_Symbols getSymbolFromStr(string s){
     if(s == "ADD")  return User_Symbols::ADD;
-    if(s == "SUB")  return User_Symbols::SUB;
     if(s == "MUL")  return User_Symbols::MUL;
     if(s == "DIV")  return User_Symbols::DIV;
     if(s == "MEM")  return User_Symbols::MEM;
@@ -94,7 +93,6 @@ ostream& operator<<(ostream& out, Tree& tree){
 }
 
 %term ADD
-%term SUB
 %term MUL
 %term DIV
 %term MEM
@@ -129,6 +127,18 @@ loadReg <- reg: MEM(reg) { return $cost[1] + 1; } = {
 mul <- reg: MUL(reg,reg) { return $cost[1] + $cost[2] + 2; } = {
     std::cout << "mul $ri, $rj, $rk\n";
 };
+
+%%
+
+%register $s0
+$register $s1
+%register $s2
+%register $s3
+%register $s3
+%register $s4
+%register $s5
+%register $s6
+%register $s7
 
 %%
 

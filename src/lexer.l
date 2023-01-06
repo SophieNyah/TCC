@@ -32,8 +32,9 @@ using namespace generator;
 "="  { return parser::token::EQUALS; }
 
     /* Símbolos declarativos */
-"%term"    { return parser::token::NEW_TERM; }
-"%nonterm" { return parser::token::NEW_NON_TERM; }
+"%term"     { return parser::token::NEW_TERM; }
+"%nonterm"  { return parser::token::NEW_NON_TERM; }
+"%register" { return parser::token::NEW_REGISTER; }
 
     /* Código CPP */
 "{" {
