@@ -11,7 +11,7 @@ LEXICO_FLAGS = --outfile=src/scanner.cpp --header-file=src/scanner.hpp
 SINTATICO = parser.y
 SINTATICO_FLAGS = --output=src/parser.cpp -d
 
-OBJECTS = Helper.o Rule.o Tree.o CodeGen.o parser.o scanner.o
+OBJECTS = Helper.o Rule.o Tree.o CodeGen.o parser.o scanner.o RegAlloc.o
 OUT_PATH=./output/src
 SRC_PATH=./src
 

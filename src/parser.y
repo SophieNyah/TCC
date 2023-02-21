@@ -45,6 +45,9 @@
 %token NEW_TERM
 %token NEW_NON_TERM
 %token NEW_REGISTER
+%token SET_READ_INSTRUCTION
+%token SET_WRITE_INSTRUCTION
+%token NEW_SPILL_REGISTER
 
 %token TREE_PATTERN_SEPARATOR
 %token L_BRACKET
@@ -62,6 +65,7 @@
 %token <std::string> REGISTER_ID
 %token <std::string> SPECIFIC_ID
 %token <std::string> IDENTIFIER
+%token <std::string> STRING_LITERAL
 
 %token END_OF_FILE
 %token UNIDENTIFIED
@@ -81,8 +85,8 @@
 
 %%
 
-start: header  DL_INPUT  rule  DL_INPUT  CPP_CODE registers_declaration END_OF_FILE  {
-            code_t code{ Helper::trim($5.substr(1, $5.size()-2)) };
+start: header  DL_INPUT  rule  DL_INPUT  registers_declaration CPP_CODE END_OF_FILE  {
+            code_t code{ Helper::trim($6.substr(1, $6.size()-2)) };
             Helper::setCode(code);
             return Helper::getError() ? 0 /*false*/ : 1 /*true*/;
         }
@@ -135,12 +139,16 @@ rule: IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action
         }
 ;
 
-registers_declaration: DL_INPUT registers_block {}
+registers_declaration: registers_block DL_INPUT { RegAlloc::_setAllocator(); }
                      | %empty {}
 ;
-registers_block: NEW_REGISTER IDENTIFIER {
-                    RegAlloc::_newReg($2);
-                }
+registers_block: registers_block register_declare {}
+               | register_declare                 {}
+;
+register_declare: NEW_REGISTER IDENTIFIER { RegAlloc::_newReg($2); }
+                | NEW_SPILL_REGISTER IDENTIFIER { RegAlloc::_newSpillReg($2); }
+                | SET_READ_INSTRUCTION STRING_LITERAL { RegAlloc::_setReadInstruction(Instruction($2, {})); }
+                | SET_WRITE_INSTRUCTION STRING_LITERAL { RegAlloc::_setWriteInstruction(Instruction($2, {})); }
 ;
 
 tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET

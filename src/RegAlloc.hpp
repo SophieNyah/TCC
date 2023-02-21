@@ -4,9 +4,11 @@
 #include<string>
 #include<map>
 #include<vector>
+#include<optional>
 
 using namespace std;
-using regId = int;
+
+constexpr bool YAMG_WRITEABLE_OPERAND = true;
 
 class Instruction {
 
@@ -18,15 +20,21 @@ class Instruction {
         string template_instruction;
 
     public:
-        Instruction(string template_instruction, vector<string> operands);
-        string printInstruction();
-        
+        struct OperandType {
+            string name;
+            bool write_operand = false;
+        };
+
+        Instruction(string template_instruction, vector<OperandType> operands);
+        string printInstruction(bool use_registers);
+
         /**
          * Uma lista de todos os operandos que irão para a instrução template
          * Podem ser constantes, registradores virtuais (começando com '%') que serão alocados, acessos à memória, dentre outros
          * Ex.: <"%reg1", "%reg3">
          **/
-        vector<string> operands;
+        vector<OperandType> operands;
+        vector<string> registers;
 
 };
 
@@ -45,18 +53,28 @@ class RegAlloc {
 
         RegAlloc() = delete;
 
-        static void allocate();
-        static void emitCode();
+        static void _setAllocator();
+        static bool _isAllocatorSet();
         static void _newReg(string name);
+        static void _newSpillReg(string name);
+        static void _setReadInstruction(Instruction read);
+        static void _setWriteInstruction(Instruction write);
+        
+        static void allocate();
+        static void printCode(bool use_registers=true);
         static void newInstruction(Instruction);
-        static void newInstruction(string template_instruction, vector<string> operands);
+        static void newInstruction(string template_instruction, vector<Instruction::OperandType> operands);
 
     private:
+        static bool use_allocator;
+
         static map<string, variable> variables;
         static vector<Instruction> instructions;
         static vector<string> registers;
-        // static vector<regId> actives;
-        // static vector<regId> availables;
+        static vector<string> spill_registers;
+
+        static optional<Instruction> read_instruction;
+        static optional<Instruction> write_instruction;
 
         struct Private;
         // static void linearScan();

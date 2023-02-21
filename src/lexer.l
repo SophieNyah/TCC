@@ -32,9 +32,12 @@ using namespace generator;
 "="  { return parser::token::EQUALS; }
 
     /* Símbolos declarativos */
-"%term"     { return parser::token::NEW_TERM; }
-"%nonterm"  { return parser::token::NEW_NON_TERM; }
-"%register" { return parser::token::NEW_REGISTER; }
+"%term"      { return parser::token::NEW_TERM; }
+"%nonterm"   { return parser::token::NEW_NON_TERM; }
+"%register"  { return parser::token::NEW_REGISTER; }
+"%set_read"  { return parser::token::SET_READ_INSTRUCTION; }
+"%set_write" { return parser::token::SET_WRITE_INSTRUCTION; }
+"%spill_register" { return parser::token::NEW_SPILL_REGISTER; }
 
     /* Código CPP */
 "{" {
@@ -71,7 +74,9 @@ using namespace generator;
 [0-9]+  { yylval->emplace<int>(std::atoi(yytext)); return parser::token::INTEGER; }
 
     /* Identificador */
-[_a-zA-Z][_a-zA-Z0-9]* { yylval->emplace<std::string>(yytext); return parser::token::IDENTIFIER; }
+$?[_a-zA-Z][_a-zA-Z0-9]* { yylval->emplace<std::string>(yytext); return parser::token::IDENTIFIER; }
+    /* String literal */
+\"(\\.|[^\\"])*\" { yylval->emplace<std::string>(yytext); return parser::token::STRING_LITERAL; }
 
 	/* misc */
 [ \r\t\f]	{  }

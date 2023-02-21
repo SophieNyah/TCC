@@ -92,6 +92,21 @@ class YamgTree: public TemplateTree<U>{
             return this->matched_rules.at(0).second; // linha para o compilad or não reclamar
         }
 
+        pair<int&, string> _getChildName(int& child){
+            if(child == 0){
+                pair<int&, string> par{ child, this->getName() };
+                return par;
+            }
+
+            for(U& c: this->getChildren()){
+                child--;
+                pair<int&, string> value = c._getChildName(child);
+                if(child == 0) return value;
+            }
+            pair<int&, string> par{ child, this->getName() };
+            return par;
+        }
+
     protected:
 
         YamgTree(){}
@@ -112,6 +127,10 @@ class YamgTree: public TemplateTree<U>{
 
         int& getChildCost(int child){
             return this->_getChildCost(child);
+        }
+
+        string getChildName(int child){
+            return this->_getChildName(child).second;
         }
 };
 

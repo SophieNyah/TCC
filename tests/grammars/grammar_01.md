@@ -104,6 +104,7 @@ ostream& operator<<(ostream& out, Tree& tree){
 
 regist <- reg: CONST { return 1; } = {
     std::cout << "addi $r, $zero, c\n";
+    RegAlloc::newInstruction({"addi %o, $zero, c"}, { {$[0], YAMG_WRITEABLE_OPERAND}, {$[1]} });
 };
 
 statement <- stmt: reg { return $cost[0]; } = { ; };
@@ -131,14 +132,20 @@ mul <- reg: MUL(reg,reg) { return $cost[1] + $cost[2] + 2; } = {
 %%
 
 %register $s0
-$register $s1
+%register $s1
 %register $s2
-%register $s3
 %register $s3
 %register $s4
 %register $s5
 %register $s6
 %register $s7
+
+%spill_register $t0
+%spill_register $t1
+%spill_register $t2
+
+%set_read "lw %o, %o($sp)"
+%set_write "sw %o, %o($sp)"
 
 %%
 
@@ -149,8 +156,10 @@ using namespace Code_Generator;
 int main(){
     Tree t{};
     t = t.readTree(t);
-    label(t);
-    reduce(t);
+    std::cout << t;
+    // label(t);
+    // reduce(t);
+    // RegAlloc::printCode(false);
 }
 
 }

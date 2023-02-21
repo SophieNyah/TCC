@@ -1,4 +1,0 @@
-ADD(%r1,%r2)
-ADD(%r1,CONST)
-MUL(ADD(%r2,%r3),ADD(ADD(%r1,%r3),%r4))
-MEM(ADD(ADD(%r3,%r4)),CONST)

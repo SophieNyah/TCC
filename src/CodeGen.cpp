@@ -11,6 +11,7 @@
 #include"Helper.hpp"
 #include"Tree.hpp"
 #include"Rule.hpp"
+#include"RegAlloc.hpp"
 #include"types.hpp"
 
 using namespace std;
@@ -67,6 +68,7 @@ namespace{
         out_file_cpp << "#include<map>\n"
                  << "#include<limits>\n"
                  << "#include\"" << include_name << ".hpp\"\n"
+                 << (RegAlloc::_isAllocatorSet() ? "#include\"../../src/RegAlloc.hpp\"\n" : "")
                  << "#include\"../../src/Tree.hpp\"\n\n";
 
 
@@ -166,6 +168,25 @@ namespace{
         return table;
     }
     
+    string findAndReplace(string search_in, string replace_with[2], string seach_expression) {
+        string replaced{};
+        try {
+            regex expr(seach_expression);
+            auto itr = search_in.begin();
+            std::match_results<std::string::iterator> match;
+
+            while(regex_search(itr, search_in.end(), match, expr)) {
+                replaced.append(itr, itr+match.position());
+                replaced.append(replace_with[0] + match[1].str() + replace_with[1]);
+                itr += match.position() + match.length();
+            }
+            if(replaced.length() > 0) replaced.append(itr, search_in.end());
+        } catch(...) {
+            return search_in;
+        }
+        return replaced.length() > 0 ? replaced : search_in;
+    }
+
     void printTableAndFinalStates(table_t* table){
         int rows{ (int)table->size() };
         int columns{ (int)(*table)[0].size() };
@@ -204,8 +225,8 @@ namespace{
                  << "        switch(r){\n";
         for( Rule r: Helper::getRules() ){
             string costStr = r.getCost();
-            costStr = regex_replace( costStr, regex( "\\$cost\\[" ), "t.getChildCost(" );
-            costStr = regex_replace( costStr, regex( "\\]" ), ")" );
+            string replace_with[2]{"t.getChildCost(", ")"};
+            costStr = findAndReplace(costStr, replace_with, "\\$cost\\[(\\d+)\\]");
 
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
                      << printTab(4) << costStr << '\n'
@@ -265,11 +286,14 @@ namespace{
         << "    }\n\n";
     }
     void printAction(){
-        out_file_cpp << "    int action(Rules r){\n"
+        out_file_cpp << "    int action(Rules r, Tree &t){\n"
                  << "        switch(r){\n";
         for( Rule r: Helper::getRules() ){
+            string replace_with[2]{"t.getChildName(", ")"};
+            string act = findAndReplace(r.getAction(), replace_with, "\\$\\[(\\d+)\\]");
+
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
-                     << printTab(4) << r.getAction() << '\n'
+                     << printTab(4) << act << '\n'
                      << printTab(4) << "break;\n";
         }
         out_file_cpp << "            default: break;\n"
@@ -338,7 +362,7 @@ namespace{
                  << "        vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };\n"
                  << "        int count{ 0 };\n"
                  << "        reduceAux(t, limit, count);\n"
-                 << "        action(r);\n"
+                 << "        action(r, t);\n"
                  << "    }\n\n";
     }
 
@@ -386,7 +410,7 @@ namespace{
                    << "        /* Funções */\n"
                    << "    // MyPair     isFinalState(int state, Tree=Tree());\n"
                    << "    StateArray matchTree(Tree&, StateArray={0});\n"
-                   << "    int    action(Rules r);\n"
+                   << "    int    action(Rules r, Tree &t);\n"
                    << "    cost_t cost(Rules, Tree);\n"
                    << "    void   label(Tree&);\n"
                    << "    void   reduce(Tree&);\n\n"
