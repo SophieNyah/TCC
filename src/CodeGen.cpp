@@ -267,10 +267,10 @@ namespace{
     }
     void printLabel(){
         out_file_cpp
-        << "    void label(Tree& t){\n"
+        << "    void _label(Tree& t){\n"
         << "        for( int i=0; i<t.children_size; i++ ){\n"
         << "            Tree& c{ t.getChildReference(i) };\n"
-        << "            label(c);\n"
+        << "            _label(c);\n"
         << "        }\n"
         << "        StateArray final_states{};\n"
         << "        matchTree(t, final_states);\n"
@@ -342,30 +342,48 @@ namespace{
         }
         out_file_cpp << "    };\n\n"
 
-                 << "    void reduce(Tree&);\n"
-                 << "    void reduceAux(Tree& t, std::vector<RuleLimit_t>& limit, int& count){\n"
+                 << "    void _reduce(Tree&);\n"
+                 << "    void _reduceAux(Tree& t, std::vector<RuleLimit_t>& limit, int& count){\n"
                  << "        if( count == limit.at(0).first ){\n"
                  << "            limit.erase(limit.begin());\n"
-                 << "            if( count != 0 ) reduce(t);\n"
+                 << "            if( count != 0 ) _reduce(t);\n"
                  << "            return;\n"
                  << "        }\n\n"
                  
                  << "        for( Tree c: t.getChildren() ){\n"
                  << "            count++;\n"
-                 << "            reduceAux(c, limit, count);\n"
+                 << "            _reduceAux(c, limit, count);\n"
                  << "            if( limit.empty() ) break;\n"
                  << "        }\n"
                  << "    }\n\n"
 
-                 << "    void reduce(Tree& t){\n"
+                 << "    void _reduce(Tree& t){\n"
                  << "        Rules r{ t.matched_rules.at(0).first };\n"
                  << "        vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };\n"
                  << "        int count{ 0 };\n"
-                 << "        reduceAux(t, limit, count);\n"
+                 << "        _reduceAux(t, limit, count);\n"
                  << "        action(r, t);\n"
                  << "    }\n\n";
     }
+    void printGenerateCode(){
+        if(RegAlloc::_isAllocatorSet()) {
+            optional<Instruction> read  = RegAlloc::_getReadInstruction();
+            optional<Instruction> write = RegAlloc::_getWriteInstruction();
+            out_file_cpp << "    void _setRegisters() {\n";
+            for(string reg: RegAlloc::_getRegs())        { out_file_cpp << "        RegAlloc::_newReg({\"" + reg + "\"});\n"; }
+            for(string spill: RegAlloc::_getSpillRegs()) { out_file_cpp << "        RegAlloc::_newSpillReg({\"" + spill + "\"});\n"; }
+            if(read.has_value())  out_file_cpp << "        RegAlloc::_setReadInstruction(Instruction{ {" << read.value().template_instruction << "}, {} });\n";
+            if(write.has_value()) out_file_cpp << "        RegAlloc::_setWriteInstruction(Instruction{ {" << write.value().template_instruction << "}, {} });\n";
+            out_file_cpp << "    }\n\n";
+        }
 
+        out_file_cpp
+            << "    void generateCode(Tree &t) {\n"
+            << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
+            << "        _label(t);\n"
+            << "        _reduce(t);\n"
+            << "    }\n\n";
+    }
 
 
     void printHpp(string output_file_name){
@@ -412,8 +430,9 @@ namespace{
                    << "    StateArray matchTree(Tree&, StateArray={0});\n"
                    << "    int    action(Rules r, Tree &t);\n"
                    << "    cost_t cost(Rules, Tree);\n"
-                   << "    void   label(Tree&);\n"
-                   << "    void   reduce(Tree&);\n\n"
+                   // << "    void   label(Tree&);\n"
+                   // << "    void   reduce(Tree&);\n"
+                   << "    void   generateCode(Tree&);\n\n"
                    
                    << "}\n\n"
                    
@@ -443,6 +462,7 @@ void CodeGenerator::generate(string output_file_name){
     printLabel();
     printAction();
     printReduce();
+    printGenerateCode();
 
     endHeaderStartUserCode();
 
