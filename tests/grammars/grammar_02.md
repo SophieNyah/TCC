@@ -1,23 +1,6 @@
 {
 #include<iostream>
 
-User_Symbols getSymbolFromStr(string s){
-    if(s == "ADD")  return User_Symbols::ADD;
-    if(s == "SUB")  return User_Symbols::SUB;
-    if(s == "MUL")  return User_Symbols::MUL;
-    if(s == "MEM")  return User_Symbols::MEM;
-    if(s == "CONST")return User_Symbols::CONST;
-    if(s == "MOVE") return User_Symbols::MOVE;
-    if(s == "FP")   return User_Symbols::FP;
-    if(s == "VAR")  return User_Symbols::VAR;
-    if(s == "reg")  return User_Symbols::reg;
-                    return User_Symbols::stmt;
-}
-Node_type getNodeTypeFromStr(string s){
-    if(s == "c") return Node_type::constante;
-                 return Node_type::constante;
-}
-
 class Tree: public YamgTree<Tree>{
     public:
 
@@ -25,6 +8,25 @@ class Tree: public YamgTree<Tree>{
         Tree(const string& name, const User_Symbols user_symbol, const Node_type& type)
             : YamgTree{ name, user_symbol, type }
             {}
+
+        User_Symbols readUserSymbol() override {
+            string s = this->name;
+            if(s == "ADD")  return User_Symbols::ADD;
+            if(s == "SUB")  return User_Symbols::SUB;
+            if(s == "MUL")  return User_Symbols::MUL;
+            if(s == "MEM")  return User_Symbols::MEM;
+            if(s == "CONST")return User_Symbols::CONST;
+            if(s == "MOVE") return User_Symbols::MOVE;
+            if(s == "FP")   return User_Symbols::FP;
+            if(s == "VAR")  return User_Symbols::VAR;
+            if(s == "reg")  return User_Symbols::reg;
+                            return User_Symbols::stmt;
+        }
+        Node_type readNodeType() override {
+            string s = this->name;
+            if(s == "c") return Node_type::constante;
+                         return Node_type::constante;
+        }
 
         std::pair<Tree, bool> readTreeRecursion(Tree& t){
             char c;
@@ -40,8 +42,8 @@ class Tree: public YamgTree<Tree>{
                             s.push_back(c);
                         }else if( c=='(' || c==',' || c==')' ){
                             t.name = s;
-                            t.user_symbol = (int)getSymbolFromStr(s);
-                            t.type = getNodeTypeFromStr(s);
+                            t.user_symbol = (int)t.readUserSymbol();
+                            t.type = t.readNodeType();
                             if( c=='(' ){
                                 do{
                                     Tree t1{};
@@ -64,8 +66,8 @@ class Tree: public YamgTree<Tree>{
             return std::pair<Tree, bool>{ t, true };
         }
 
-        Tree readTree(Tree& t) override {
-            return readTreeRecursion(t).first;
+        void readTree() override {
+            readTreeRecursion(*this).first;
         }
 
         int coisa1;
@@ -195,9 +197,9 @@ using namespace Code_Generator;
 
 int main(){
     Tree t{};
-    t = t.readTree(t);
-    label(t);
-    reduce(t);
+    t.readTree();
+    // label(t);
+    // reduce(t);
 }
 
 }

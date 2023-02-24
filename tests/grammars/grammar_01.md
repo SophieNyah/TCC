@@ -1,29 +1,46 @@
 {
 #include<iostream>
 
-User_Symbols getSymbolFromStr(string s){
-    if(s == "ADD")  return User_Symbols::ADD;
-    if(s == "MUL")  return User_Symbols::MUL;
-    if(s == "DIV")  return User_Symbols::DIV;
-    if(s == "MEM")  return User_Symbols::MEM;
-    if(s == "CONST")return User_Symbols::CONST;
-    if(s == "reg")  return User_Symbols::reg;
-                    return User_Symbols::stmt;
+string requestVar() {
+    static int num = 0;
+    num++;
+    return {"requestedVar_" + to_string(num)}; 
 }
-Node_type getNodeTypeFromStr(string s){
-    if(s == "c")    return Node_type::constante;
-    if(s == "r")    return Node_type::registrador;
-    if(s[0] == '#') return Node_type::especifico;
-                    return Node_type::operacao;
+
+bool isNumber(string& s) {
+    string::size_type start = 0;
+    if(s[0] == '-') start = 1;
+    for(string::size_type i = start; i < s.length(); i++) {
+        if(!isdigit(s[i])) return false;
+    }
+    return true;
 }
 
 class Tree: public YamgTree<Tree>{
-    public:
+public:
 
         Tree(){}
         Tree(const string& name, const User_Symbols user_symbol, const Node_type& type)
             : YamgTree{ name, user_symbol, type }
             {}
+
+        User_Symbols readUserSymbol() override {
+            string s = this->name;
+            if(s == "ADD")  return User_Symbols::ADD;
+            if(s == "MUL")  return User_Symbols::MUL;
+            if(s == "DIV")  return User_Symbols::DIV;
+            if(s == "MEM")  return User_Symbols::MEM;
+            if(isNumber(s)) return User_Symbols::CONST;
+            if(s[0] == 'r') return User_Symbols::reg;
+                            return User_Symbols::stmt;
+        }
+        Node_type readNodeType() override {
+            string s = this->name;
+            if(isNumber(s)) return Node_type::constante;
+            if(s[0] == 'r') return Node_type::registrador;
+            if(s[0] == '#') return Node_type::especifico;
+            return Node_type::operacao;
+        }
 
         std::pair<Tree, bool> readTreeRecursion(Tree& t){
             char c;
@@ -39,8 +56,8 @@ class Tree: public YamgTree<Tree>{
                             s.push_back(c);
                         }else if( c=='(' || c==',' || c==')' ){
                             t.name = s;
-                            t.user_symbol = (int)getSymbolFromStr(s);
-                            t.type = getNodeTypeFromStr(s);
+                            t.user_symbol = (int)t.readUserSymbol();
+                            t.type = t.readNodeType();
                             if( c=='(' ){
                                 do{
                                     Tree t1{};
@@ -63,8 +80,8 @@ class Tree: public YamgTree<Tree>{
             return std::pair<Tree, bool>{ t, true };
         }
 
-        Tree readTree(Tree& t) override {
-            return readTreeRecursion(t).first;
+        void readTree() override {
+            readTreeRecursion(*this).first;
         }
 
         int coisa1;
@@ -75,9 +92,9 @@ class Tree: public YamgTree<Tree>{
 };
 
 ostream& operator<<(ostream& out, Tree& tree){
-    out << tree.name;
-    int children = tree.getChildren().size();
-    
+out << tree.name;
+int children = tree.getChildren().size();
+
     if( children > 0 ){ out << "(" << tree.action << " "; }
     for( int i=0; i<children; i++){
         Tree t = tree.getChild(i).value();
@@ -103,14 +120,15 @@ ostream& operator<<(ostream& out, Tree& tree){
 %%
 
 regist <- reg: CONST { return 1; } = {
-    std::cout << "addi $r, $zero, c\n";
-    RegAlloc::newInstruction({"addi %o, $zero, c"}, { {$[0], YAMG_WRITEABLE_OPERAND}, {$[1]} });
+    // std::cout << "addi $r, $zero, c\n";
+    RegAlloc::newInstruction({"addi %o, $zero, %c"}, { {requestVar(), YAMG_WRITEABLE_OPERAND} }, { $[0] });
 };
 
 statement <- stmt: reg { return $cost[0]; } = { ; };
 
 addConst <- reg: ADD(reg,CONST) { return $cost[1] + 1; } = {
-    std::cout << "addi $ri, $rj, c\n";
+    // std::cout << "addi $ri, $rj, c\n";
+    RegAlloc::newInstruction({"addi %o, %o, %c"}, { {requestVar(), YAMG_WRITEABLE_OPERAND}, {$[1]} }, { $[2] });
 };
 
 addReg <- reg: ADD(reg,reg) { return $cost[1] + $cost[2] + 1; } = {
@@ -151,15 +169,14 @@ mul <- reg: MUL(reg,reg) { return $cost[1] + $cost[2] + 2; } = {
 
 {
 
-using namespace Code_Generator;
-
 int main(){
     Tree t{};
-    t = t.readTree(t);
-    std::cout << t;
-    // label(t);
-    // reduce(t);
-    // RegAlloc::printCode(false);
+    t.readTree();
+    Code_Generator::generateCode(t);
+    RegAlloc::printCode(false);
+    std::cout << '\n';
+    RegAlloc::allocate();
+    RegAlloc::printCode();
 }
 
 }
