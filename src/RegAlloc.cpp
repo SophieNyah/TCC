@@ -7,25 +7,38 @@
  *                        *
  **************************/
 
-Instruction::Instruction(string template_instruction, vector<OperandType> operands):
+Instruction::Instruction(string template_instruction, vector<OperandType> operands, vector<string> constants):
     template_instruction{ template_instruction },
     operands{ operands },
-    registers{}
+    registers{},
+    constants{ constants }
     {}
 #include<iostream>
-string Instruction::printInstruction(bool use_registers = false) {
-    if(use_registers){
-        if(this->registers.size() == 0) return this->template_instruction;
-    } else {
-        if(this->operands.size() == 0) return this->template_instruction;
-    }
 
-    string instruction{};
-    string tokenize{ this->template_instruction };
-    string delimiter{ "%o" };
+string replaceAllTokens(const string &delimiter, const string &str, const vector<string> &values) {
+    string replaced{};
+    string tokenize{ str };
     string token{};
     size_t pos{ 0 };
     int iteration{ 0 };
+
+    while( (pos = tokenize.find(delimiter)) != string::npos ){
+        token = tokenize.substr(0, pos);
+        replaced.append(token);
+        if(values.size() >= iteration) replaced.append(values[iteration]);
+        tokenize.erase(0, pos + delimiter.length());
+        iteration++;
+    }
+    if(tokenize.size() > 0) replaced.append(tokenize);
+
+    return replaced;
+}
+string Instruction::printInstruction(bool use_registers = false) {
+    if(this->registers.empty() && this->operands.empty() && this->constants.empty()){
+        if(this->registers.size() == 0) return this->template_instruction;
+    }
+
+    string instruction{};
     vector<string> operands{};
 
     if(use_registers) {
@@ -34,16 +47,8 @@ string Instruction::printInstruction(bool use_registers = false) {
         for(auto op: this->operands) { operands.emplace_back(op.name); }
     }
 
-    while((pos = tokenize.find(delimiter)) != string::npos){
-        token = tokenize.substr(0, pos);
-        instruction.append(token);
-        if(operands.size() >= iteration)
-            instruction.append(operands[iteration]);
-        tokenize.erase(0, pos+delimiter.length());
-        iteration++;
-    }
-
-    if(tokenize.size() > 0) instruction.append(tokenize);
+    instruction = replaceAllTokens("%o", this->template_instruction, operands);
+    instruction = replaceAllTokens("%c", instruction, this->constants);
 
     return instruction;
 }
@@ -129,7 +134,7 @@ struct RegAlloc::Private {
                 }
             }
             vector<name_variable> curr_actives{ *actives_iterator.base() };
-            
+
             for(Instruction::OperandType operand: instruction.operands) {
                 auto register_iterator = std::find_if(curr_actives.begin(), curr_actives.end(), [operand](name_variable var)->bool { return operand.name == var.second.name; });
                 if(register_iterator != curr_actives.end()) {
@@ -262,9 +267,20 @@ void RegAlloc::printCode(bool use_registers) {
 
 void RegAlloc::_setAllocator() { RegAlloc::use_allocator = true; }
 bool RegAlloc::_isAllocatorSet() { return RegAlloc::use_allocator; }
+
 void RegAlloc::_newReg(string name) { RegAlloc::registers.push_back(name); }
+const vector<string> RegAlloc::_getRegs() { return RegAlloc::registers; }
+
 void RegAlloc::_newSpillReg(string name) { RegAlloc::spill_registers.push_back(name); }
+const vector<string> RegAlloc::_getSpillRegs() { return RegAlloc::spill_registers; }
+
 void RegAlloc::_setReadInstruction(Instruction read) { RegAlloc::read_instruction = read; }
+const optional<Instruction> RegAlloc::_getReadInstruction() { return RegAlloc::read_instruction; }
+
 void RegAlloc::_setWriteInstruction(Instruction write) { RegAlloc::write_instruction = write; }
+const optional<Instruction> RegAlloc::_getWriteInstruction() { return RegAlloc::write_instruction; }
+
 void RegAlloc::newInstruction(Instruction i) { RegAlloc::instructions.push_back(i); }
-void RegAlloc::newInstruction(string template_string, vector<Instruction::OperandType> operands) { RegAlloc::instructions.push_back(Instruction{template_string, operands}); }
+void RegAlloc::newInstruction(string template_string, vector<Instruction::OperandType> operands, vector<string> constants) {
+    RegAlloc::instructions.push_back(Instruction{template_string, operands, constants});
+}
