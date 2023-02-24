@@ -113,10 +113,27 @@ class YamgTree: public TemplateTree<U>{
         YamgTree(const string& name, const User_Symbols non_term, const Node_type& type)
             : TemplateTree<U>{ name, non_term, type }
             {}
-            
+
     public:
 
-        virtual U readTree(U& tree) = 0;
+        /**
+         * Função de leitura da AST.
+         * A maneira como a leitura é feita a discrição do usuário, mas o argumento 'this' deve se tornar a árvore lida.
+         */
+        virtual void readTree() = 0;
+
+        /**
+         * Verifica qual o Node_type do nó passado.
+         * Uma possível implementação é ler o 'name' da árvore para determinar o valor.
+         * @return Node_type do nó.
+         */
+        virtual Node_type readNodeType() { return Node_type::constante; }
+        /**
+         * Verifica qual o User_Symbols do nó passado.
+         * Uma possível implementação é ler o 'name' da árvore para determinar o valor.
+         * @return User_Symbols do nó.
+         */
+        virtual User_Symbols readUserSymbol() { User_Symbols undefined; return undefined; }
 
         virtual ~YamgTree() = default;
 
