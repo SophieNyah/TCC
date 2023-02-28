@@ -20,3 +20,4 @@ Para realizar os casos de teste padrões:
 
 A saída das gramáticas estará na pasta ./tests/grammar_outputs.
 É possível criar outros casos de teste e colocá-los na pasta ./tests/grammars, o script rodará todos os arquivos na pasta.
+As instruções de como utilizar a ferramenta e gerar suas próprias gramáticas se encontram no arquivo MANUAL.md
