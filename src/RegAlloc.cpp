@@ -1,6 +1,8 @@
 #include<algorithm>
 #include"RegAlloc.hpp"
 
+using namespace std;
+
 /**************************
  *                        *
  *   Classe Instruction   *
@@ -33,7 +35,7 @@ string replaceAllTokens(const string &delimiter, const string &str, const vector
 
     return replaced;
 }
-string Instruction::printInstruction(bool use_registers = false) {
+string Instruction::printInstruction(bool use_registers) {
     if(this->registers.empty() && this->operands.empty() && this->constants.empty()){
         if(this->registers.size() == 0) return this->template_instruction;
     }
@@ -259,9 +261,9 @@ void RegAlloc::allocate() {
     RegAlloc::Private::linearScan();
 }
 
-void RegAlloc::printCode(bool use_registers) {
+void RegAlloc::printCode(ostream out_file, bool use_registers) {
     for(Instruction i: RegAlloc::instructions) {
-        cout << i.printInstruction(use_registers) << '\n';
+        out_file << i.printInstruction(use_registers) << '\n';
     }
 }
 
