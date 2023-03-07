@@ -72,37 +72,28 @@ namespace{
                  << "#include\"../../src/Tree.hpp\"\n\n";
 
 
-        /* Enum de regras */
-        out_file_cpp << "enum class Rules {\n"
-                 << "    null = -1,\n";
-        for( Rule r: Helper::getRules() ){
-            out_file_cpp << printTab(1) << r.getName() << " = " << r.getRuleNumber() << ",\n";
-        }
-        out_file_cpp << "};\n\n";
-
-
-        /* map de (regra, não-terminal) */
-        out_file_cpp << "const std::map<Rules, int> Rules_Non_Terminals{\n";
-        for( Rule r: Helper::getRules() ){
-            int num{ user_symbols.at(r.getSymbol()) };
-            out_file_cpp << printTab(1) << "{ Rules::" << r.getName() << ", " << num << " },\n";
-        }
-        out_file_cpp << "};\n\n";
-
-
-        /* Variáveis de delimitação do enum */
-        out_file_cpp << "const int TERMINALS_START     = " << 0 << ";\n";
-        out_file_cpp << "const int TERMINALS_END       = " << Helper::getTerms().size() - 1 << ";\n";
-        out_file_cpp << "const int NON_TERMINALS_START = " << Helper::getTerms().size() << ";\n";
-        out_file_cpp << "const int NON_TERMINALS_END   = " << user_symbols.size() - 1 << ";\n";
-
-        /* Enum de não-terminais */
-        out_file_cpp << "enum class User_Symbols {\n";
-        out_file_cpp << printTab(1) << "null = -1,\n";
-        for( auto symbol: user_symbols ){
-            out_file_cpp << printTab(1) << symbol.first << " = " << symbol.second << ",\n";
-        }
-        out_file_cpp << "};\n\n";
+//        /* map de (regra, não-terminal) */
+//        out_file_cpp << "const std::map<Rules, int> Rules_Non_Terminals{\n";
+//        for( Rule r: Helper::getRules() ){
+//            int num{ user_symbols.at(r.getSymbol()) };
+//            out_file_cpp << printTab(1) << "{ Rules::" << r.getName() << ", " << num << " },\n";
+//        }
+//        out_file_cpp << "};\n\n";
+//
+//
+//        /* Variáveis de delimitação do enum */
+//        out_file_cpp << "const int TERMINALS_START     = " << 0 << ";\n";
+//        out_file_cpp << "const int TERMINALS_END       = " << Helper::getTerms().size() - 1 << ";\n";
+//        out_file_cpp << "const int NON_TERMINALS_START = " << Helper::getTerms().size() << ";\n";
+//        out_file_cpp << "const int NON_TERMINALS_END   = " << user_symbols.size() - 1 << ";\n";
+//
+//        /* Enum de não-terminais */
+//        out_file_cpp << "enum class User_Symbols {\n";
+//        out_file_cpp << printTab(1) << "null = -1,\n";
+//        for( auto symbol: user_symbols ){
+//            out_file_cpp << printTab(1) << symbol.first << " = " << symbol.second << ",\n";
+//        }
+//        out_file_cpp << "};\n\n";
         
 
         /* Header do usuário */
@@ -110,7 +101,7 @@ namespace{
 
 
         /* Abre o namespace */
-        out_file_cpp << "namespace Code_Generator{\n\n";
+        out_file_cpp << "namespace Yamg{\n\n";
 
 
         /* Aliases de tipos */
@@ -403,11 +394,27 @@ namespace{
                    << "        /* Classe do usuário */\n"
                    << "    class Tree;\n\n"
                    
-                   << "        /* Enums */\n"
-                   << "    enum class Rules: int;\n"
-                   << "    enum class User_Symbols: int;\n\n"
+                   << "        /* Enums */\n";
+//                   << "    enum class Rules: int;\n"
+//                   << "    enum class User_Symbols: int;\n\n"
+//                    /* map de (regra, não-terminal) */
+                    /* Enum de regras */
+                    out_file_h << printTab(1) << "enum class Rules {\n"
+                                 << "        null = -1,\n";
+                    for( Rule r: Helper::getRules() ){
+                        out_file_h << printTab(2) << r.getName() << " = " << r.getRuleNumber() << ",\n";
+                    }
+                    out_file_h << printTab(1) << "};\n\n";
+
+                    /* Enum de não-terminais */
+                    out_file_h << printTab(1) << "enum class User_Symbols {\n";
+                    out_file_h << printTab(2) << "null = -1,\n";
+                    for( auto symbol: user_symbols ){
+                        out_file_h << printTab(2) << symbol.first << " = " << symbol.second << ",\n";
+                    }
+                    out_file_h << printTab(1) << "};\n\n";
                    
-                   << "        /* Aliases */\n"
+                   out_file_h << "        /* Aliases */\n"
                    << "    using cost_t = int;\n"
                    << "    using rule_number_t = Rules;\n"
                    << "    using MyPair = std::pair<rule_number_t, cost_t>;\n"
@@ -416,16 +423,30 @@ namespace{
                    << "    using RuleLimit_t = std::pair<int, User_Symbols>;\n\n"
                    
                    << "        /* Variáveis */\n"
-                   << "    extern const int infinity;\n"
-                   << "    extern const int TERMINALS_START;\n"
-                   << "    extern const int TERMINALS_END;\n"
-                   << "    extern const int NON_TERMINALS_START;\n"
-                   << "    extern const int NON_TERMINALS_END;\n"
-                   << "    extern const int recognition_table[17][8];\n"
-                   << "    extern const std::map<Rules, int> Rules_Non_Terminals;\n"
-                   << "    extern const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap;\n\n"
+                   << "    extern const int infinity;\n";
+//                   << "    extern const int TERMINALS_START;\n"
+//                   << "    extern const int TERMINALS_END;\n"
+//                   << "    extern const int NON_TERMINALS_START;\n"
+//                   << "    extern const int NON_TERMINALS_END;\n"
+//                   << "    extern const int recognition_table[17][8];\n"
+//                   << "    extern const std::map<Rules, int> Rules_Non_Terminals;\n"
+//                   << "    extern const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap;\n\n"
+
+
+                    /* Variáveis de delimitação do enum */
+                    out_file_h << printTab(1) << "const int TERMINALS_START     = " << 0 << ";\n";
+                    out_file_h << printTab(1) << "const int TERMINALS_END       = " << Helper::getTerms().size() - 1 << ";\n";
+                    out_file_h << printTab(1) << "const int NON_TERMINALS_START = " << Helper::getTerms().size() << ";\n";
+                    out_file_h << printTab(1) << "const int NON_TERMINALS_END   = " << user_symbols.size() - 1 << ";\n";
+
+                    out_file_h << printTab(1) << "const std::map<Rules, int> Rules_Non_Terminals{\n";
+                    for( Rule r: Helper::getRules() ){
+                        int num{ user_symbols.at(r.getSymbol()) };
+                        out_file_h << printTab(2) << "{ Rules::" << r.getName() << ", " << num << " },\n";
+                    }
+                    out_file_h << printTab(1) << "};\n\n";
                    
-                   << "        /* Funções */\n"
+                   out_file_h << "        /* Funções */\n"
                    << "    // MyPair     isFinalState(int state, Tree=Tree());\n"
                    << "    StateArray matchTree(Tree&, StateArray={0});\n"
                    << "    int    action(Rules r, Tree &t);\n"
