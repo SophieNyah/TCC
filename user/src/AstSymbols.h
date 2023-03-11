@@ -8,8 +8,8 @@
 namespace msa {
     extern "C" {
 
-#include "./lib_msa/ast_symbols.h"
-#include "./lib_msa/semantico.tab.h"
+#include "lib/msa/ast_symbols.h"
+#include "lib/msa/semantico.tab.h"
 
     }
 }
@@ -78,7 +78,7 @@ namespace AstSymbols {
             "COM_EXP",
             "COM_BLOCK",
     };
-    // Esses valores foram obtidos a partir de ./lib_msa/semantico.tab.h
+    // Esses valores foram obtidos a partir de ./lib/semantico.tab.h
     const std::map<int, std::string> TiposNoNome {
             {258, "VOID_T"},
             {259, "INT_T"},
