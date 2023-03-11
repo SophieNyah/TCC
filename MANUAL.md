@@ -17,7 +17,8 @@
 
 
 # Geração do Gerador de Código
-_Nota: assume-se que todos os comandos estão sendo rodados a partir da root do projeto._
+> **Note**
+> Assume-se que todos os comandos estão sendo rodados a partir da root do projeto
 
 Primeiramente é necessário compilar o gerador de código, que pode ser feito através do comando `$ make generator`, que irá gerar todos os arquivos objeto (.o) e o arquivo executável do gerador na pasta `./output/src/`;
 
@@ -37,7 +38,8 @@ O arquivo que será lido pelo gerador é um arquivo .md (machine description) co
   - A alocação de registradores é opcional, e caso essa seção seja omitida, não ocorrerá alocação;
 - A última seção é seu código C++ que será incluso ao final do arquivo. Caso o arquivo final deva ter uma função main, geralmente ela é inserida aqui.
 
-_Nota: todas as seções estão melhor detalhadas no artigo de [TCC](), esse é só um guia rápido de como usar a ferramenta._
+> **Note**
+> Todas as seções estão melhor detalhadas no artigo de [TCC](), esse é só um guia rápido de como usar a ferramenta
 
 ### Header
 O header deve obrigatoriamente conter duas coisas:
@@ -81,13 +83,18 @@ custo -> { Codigo-C++ }
 - ação: código C++ envolto por chaves, que será executado quando o padrão for casado;
   - Caso esteja utilizando o alocador de registradores, você deve querer criar uma nova instrução aqui;
   - Senão, esse deve ser o lugar onde seu código é emitido, por exemplo printando a instrução para algum arquivo;
-  - Diretiva: a diretiva `$[n]`, onde _n_ é um número inteiro, retorna o nome do n-ésimo nó na árvore;
+  - Diretiva `$[n]`: a diretiva `$[n]`, onde _n_ é um número inteiro, retorna o nome do n-ésimo nó na árvore;
     - Para a instrução `ADD(reg,CONST)`, `$[0]` retornará o nome de `ADD`, `$[1]` será o nome de `reg`, e `$[2]` o valor de `CONST`;
     - Utilizado principalmente para passar o nome da variável para uma nova instrução;
     - Ex.: `RegAlloc::newInstruction({ "addi, %o, %o, %c" }, { {$[0], YAMG_WRITEABLE_OPERAND}, $[1] }, { $[2] });` (esse código será explicado na seção do alocador);
+  - Diretiva `$node[n]`: funciona da mesma maneira que a diretiva anterior, exceto que ao invés de retornar o nome do nó, retorna uma cópia do mesmo, para que seus atributos possam ser acessados diretamente;
 - custo: código C++ envolto por chaves, deve obrigatoriamente retornar um valor inteiro, caso contrário não será possível casar o padrão;
   - Diretiva: a diretiva `$cost[n]`, sendo _n_ um inteiro, retorna o custo do n-ésimo nó na árvore, seguindo a mesma lógica da diretiva `$[n]`;
     - Exemplo de possível custo para a instrução `ADD(reg,CONST)`: `{ return 1 + $cost[1]; }`.
+  
+> **Warning**
+> Ao usar as diretivas, atente-se de que não há checagem de limites, o que significa que chamar um _n_ maior que o número de nós do padrão resultará em comportamento indefinido.
+> Utilize elas à vontade, mas garante sempre de que _n_ é um número válido. 
 
 ### Registradores
 Essa seção é opcional, deve apenas ser declarada caso você vá utilizar o alocador de registradores, caso contrário ela não deve ser inserida no arquivo,
@@ -227,5 +234,6 @@ Imagine que você utilizará a alocação de registradores, e tem uma regra `ADD
 Alternativamente, é possível alterar sua gramática de tal modo que todos os registradores apareçam explicitamente nas regras, de modo que a regra acima ficaria `ADD(reg, reg, reg)`,
 e a instrução seria `newInstruction({"add %o, %o, %o"}, { { $[1], YAMG_WRITEABLE_OPERAND}, {$[2]}, {$[3]} })`, deixando o nó `ADD` sem a necessidade de um nome.
 
-_Nota: essas sugestões são com base nas experiências e ideias da autora para resolver dificuldades relaciodas às limitações do modelo do projeto.
-       Caso você tenha alguma outra ideia para desenvolver sua gramática, não é necessário se prender à essas sugestões._
+> **Note**
+> Essas sugestões são com base nas experiências e ideias da autora para resolver dificuldades relaciodas às limitações do modelo do projeto.
+> Caso você tenha alguma outra ideia para desenvolver sua gramática, não é necessário se prender à essas sugestões.
