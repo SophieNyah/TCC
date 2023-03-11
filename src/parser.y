@@ -13,6 +13,7 @@
     #define YY_DECL \
         int yylex(generator::parser::semantic_type *yylval, generator::parser::location_type *loc, yyscan_t yyscanner)
     YY_DECL;
+    // void analyzeCode()
 }
 
 %code requires{
@@ -42,6 +43,7 @@
 %token DL_L_CBRACKET
 %token DL_R_CBRACKET
 
+%token ALGORITHM
 %token NEW_TERM
 %token NEW_NON_TERM
 %token NEW_REGISTER
@@ -105,6 +107,15 @@ header: header  header_new_token {}
 ;
 header_new_token: NEW_TERM  IDENTIFIER     { Helper::newTerm($2); }
                 | NEW_NON_TERM  IDENTIFIER { Helper::newNonTerm($2); }
+                | ALGORITHM IDENTIFIER     {
+                    std::string alg = $2;
+                    if(alg != "DYNAMIC_PROGRAMMING" && alg != "MINIMAL_MUNCH" && alg != "MAXIMAL_MUNCH") {
+                        Helper::semanticError("%alg is not one of \"DYNAMIC_PROGRAMMING\", \"MINIMAL_MUNCH\", \"MAXIMAL_MUNCH\".");
+                    }
+                    else if(alg == "DYNAMIC_PROGRAMMING") { Helper::setAlgorithm(Helper::AlgorithmValues::DYNAMIC_PROGRAMMING); }
+                    else if(alg == "MINIMAL_MUNCH") { Helper::setAlgorithm(Helper::AlgorithmValues::MINIMAL_MUNCH); }
+                    else if(alg == "MAXIMAL_MUNCH") { Helper::setAlgorithm(Helper::AlgorithmValues::MAXIMAL_MUNCH); }
+                }
 ;
 
 rule: IDENTIFIER TREE_PATTERN_SEPARATOR IDENTIFIER COLON tree cost EQUALS action SEMI_COLON
