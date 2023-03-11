@@ -19,8 +19,10 @@ struct Cost_expression{
 };
 
     /* Tipos que estarão no código gerado */
-enum class User_Symbols: int;
-enum class Rules: int;
+namespace Yamg {
+    enum class User_Symbols : int;
+    enum class Rules : int;
+}
 
 using cost_t = int;
 

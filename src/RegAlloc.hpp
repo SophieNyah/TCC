@@ -80,6 +80,8 @@ class RegAlloc {
         static void newInstruction(Instruction);
         static void newInstruction(std::string template_instruction, std::vector<Instruction::OperandType> operands, std::vector<std::string> constants={});
 
+        static void clearInstructions();
+
     private:
         static bool use_allocator;
 

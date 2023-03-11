@@ -11,6 +11,8 @@ MyArray<string> Helper::non_terminals{};
 MyArray<Rule>   Helper::rules{};
 code_t          Helper::user_code{""};
 code_t          Helper::header_code{""};
+Helper::Algorithms Helper::algorithms{ true, true, true };
+
 
 
 
@@ -65,3 +67,19 @@ void Helper::semanticError(const string &str){
     cerr << "Error: " << str << '\n';
     Helper::setError();
 }
+
+void Helper::setAlgorithm(AlgorithmValues value) {
+    static bool firstEnter{ true };
+    if(firstEnter) {
+        Helper::algorithms.dynamicProgramming = false;
+        Helper::algorithms.minMunch = false;
+        Helper::algorithms.maxMunch = false;
+        firstEnter = false;
+    }
+    switch(value) {
+        case AlgorithmValues::MINIMAL_MUNCH: Helper::algorithms.minMunch = true;                 break;
+        case AlgorithmValues::MAXIMAL_MUNCH: Helper::algorithms.maxMunch = true;                 break;
+        case AlgorithmValues::DYNAMIC_PROGRAMMING: Helper::algorithms.dynamicProgramming = true; break;
+    }
+}
+Helper::Algorithms Helper::getAlgorithms() { return Helper::algorithms; }

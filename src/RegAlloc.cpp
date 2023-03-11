@@ -286,3 +286,5 @@ void RegAlloc::newInstruction(Instruction i) { RegAlloc::instructions.push_back(
 void RegAlloc::newInstruction(string template_string, vector<Instruction::OperandType> operands, vector<string> constants) {
     RegAlloc::instructions.push_back(Instruction{template_string, operands, constants});
 }
+
+void RegAlloc::clearInstructions() { RegAlloc::instructions.clear(); }

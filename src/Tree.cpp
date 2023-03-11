@@ -48,11 +48,11 @@
 BasicTree::BasicTree()
     : TemplateTree{}{}
 
-BasicTree::BasicTree(const string& name, const int non_term, const Node_type& type)
+BasicTree::BasicTree(const std::string& name, const int non_term, const Node_type& type)
     : TemplateTree{ name, non_term, type }{}
 
-BasicTree::BasicTree(const string& name, const User_Symbols non_term, const Node_type& type)
+BasicTree::BasicTree(const std::string& name, const Yamg::User_Symbols non_term, const Node_type& type)
     : TemplateTree{ name, non_term, type }{}
 
-BasicTree::BasicTree(const string& name, const int non_term, const Node_type& type, const code_t& action)
+BasicTree::BasicTree(const std::string& name, const int non_term, const Node_type& type, const code_t& action)
     : TemplateTree{ name, non_term, type, action }{}

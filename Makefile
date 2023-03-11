@@ -13,6 +13,7 @@ SINTATICO_FLAGS = --output=src/parser.cpp -d
 
 OBJECTS = Helper.o Rule.o Tree.o CodeGen.o parser.o scanner.o RegAlloc.o
 OUT_PATH=./output/src
+LIB_PATH=./output/lib
 SRC_PATH=./src
 
 
@@ -31,6 +32,11 @@ parser: $(SRC_PATH)/$(LEXICO) $(SRC_PATH)/$(SINTATICO)
 	$(FLEX) $(LEXICO_FLAGS) $(SRC_PATH)/$(LEXICO) 
 	
 
+lib:
+	ar rcs $(LIB_PATH)/libyamg.a $(OUT_PATH)/CodeGen.o $(OUT_PATH)/Helper.o $(OUT_PATH)/parser.o $(OUT_PATH)/RegAlloc.o $(OUT_PATH)/Rule.o $(OUT_PATH)/scanner.o $(OUT_PATH)/Tree.o
+	#cp $(SRC_PATH)/parser.hpp $(LIB_PATH)/
+	cp $(SRC_PATH)/RegAlloc.hpp $(LIB_PATH)/
+
 clean:
 	rm -f src/parser.cpp
 	rm -f src/parser.hpp
@@ -39,10 +45,14 @@ clean:
 	rm -f src/location.hh
 	rm -f output/src/*.o
 	rm -f output/src/generator
+	rm -f output/lib/libyamg.a
+	rm -f output/lib/*.hpp
 
 clean_tests:
 	rm -f output/grammars/*.hpp
 	rm -f output/grammars/*.cpp
+	rm -f output/src/*.hpp
+	rm -f output/src/*.cpp
 	rm -f output/grammars/*.o
 
 clean_all: clean clean_tests

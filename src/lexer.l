@@ -32,6 +32,7 @@ using namespace generator;
 "="  { return parser::token::EQUALS; }
 
     /* Símbolos declarativos */
+"%alg"       { return parser::token::ALGORITHM; }
 "%term"      { return parser::token::NEW_TERM; }
 "%nonterm"   { return parser::token::NEW_NON_TERM; }
 "%register"  { return parser::token::NEW_REGISTER; }

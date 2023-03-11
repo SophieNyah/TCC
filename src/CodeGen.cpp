@@ -108,6 +108,7 @@ namespace{
         out_file_cpp << "    using cost_t = int;\n"
                  << "    using rule_number_t = Rules;\n"
                  << "    using MyPair = std::pair<rule_number_t, cost_t>;\n"
+                 << "    typedef int (*costFunction_t)(Rules, Tree);\n"
                  << '\n'
                  << "    const int infinity{ std::numeric_limits<int>::max() };\n\n";
 
@@ -193,7 +194,7 @@ namespace{
         out_file_cpp << "    };\n\n";
 
 
-        out_file_cpp << "    MyPair isFinalState(int state, Tree t){\n"
+        out_file_cpp << "    MyPair isFinalState(int state, Tree t, costFunction_t cost){\n"
                      << "        switch(state){\n";
         for( auto f: final_states ){
             out_file_cpp << "            case " << std::setw(4) << f.first << ": return MyPair{ Rules::"
@@ -211,9 +212,10 @@ namespace{
                      << "        }\n"
                      << "    }\n\n";
     }
-    void printCost(){
-        out_file_cpp << "    int cost(Rules r, Tree t){\n"
-                 << "        switch(r){\n";
+    void printCostDP(){
+        if(!Helper::getAlgorithms().dynamicProgramming) return;
+        out_file_cpp << "    int costDP(Rules r, Tree t){\n"
+                     << "        switch(r){\n";
         for( Rule r: Helper::getRules() ){
             string costStr = r.getCost();
             string replace_with[2]{"t.getChildCost(", ")"};
@@ -228,6 +230,36 @@ namespace{
                  << "                return infinity;\n"
                  << "        }\n"
                  << "    }\n\n";
+    }
+    void printCostMinMunch() {
+        if(!Helper::getAlgorithms().minMunch) return;
+        out_file_cpp << "    int costMinMunch(Rules r, Tree t) {\n"
+                     << "        switch(r) {\n";
+
+        for( Rule r: Helper::getRules() ) {
+            out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
+                         << printTab(4) << "return " << r.getPattern().size() << ";\n"
+                         << printTab(4) << "break;\n";
+        }
+        out_file_cpp << "            default:\n"
+                     << "                return infinity;\n"
+                     << "            }\n"
+                     << "    }\n\n";
+    }
+    void printCostMaxMunch() {
+        if(!Helper::getAlgorithms().maxMunch) return;
+        out_file_cpp << "    int costMaxMunch(Rules r, Tree t) {\n"
+                     << "        switch(r) {\n";
+
+        for( Rule r: Helper::getRules() ) {
+            out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
+                         << printTab(4) << "return " << -r.getPattern().size() << ";\n"
+                         << printTab(4) << "break;\n";
+        }
+        out_file_cpp << "            default:\n"
+                     << "                return infinity;\n"
+                     << "            }\n"
+                     << "    }\n\n";
     }
     void printMatchTree(){
         out_file_cpp
@@ -258,15 +290,15 @@ namespace{
     }
     void printLabel(){
         out_file_cpp
-        << "    void _label(Tree& t){\n"
+        << "    void _label(Tree& t, costFunction_t cost){\n"
         << "        for( int i=0; i<t.children_size; i++ ){\n"
         << "            Tree& c{ t.getChildReference(i) };\n"
-        << "            _label(c);\n"
+        << "            _label(c, cost);\n"
         << "        }\n"
         << "        StateArray final_states{};\n"
         << "        matchTree(t, final_states);\n"
         << "        for( int state: final_states ){\n"
-        << "            MyPair s{ isFinalState(state, t) };\n"
+        << "            MyPair s{ isFinalState(state, t, cost) };\n"
         << "            if( s.second <= t.matched_rules.at(0).second ){\n"
         << "                t.matched_rules.insert(t.matched_rules.begin(), s);\n"
         << "            }else{\n"
@@ -282,6 +314,9 @@ namespace{
         for( Rule r: Helper::getRules() ){
             string replace_with[2]{"t.getChildName(", ")"};
             string act = findAndReplace(r.getAction(), replace_with, "\\$\\[(\\d+)\\]");
+            replace_with[0] = "t.getChild(";
+//            replace_with[1] = ").value()";
+            act = findAndReplace(act, replace_with, "\\$node\\[(\\d+)\\]");
 
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
                      << printTab(4) << act << '\n'
@@ -289,7 +324,7 @@ namespace{
         }
         out_file_cpp << "            default: break;\n"
                  << "        }\n"
-                 << "        return 0;"
+                 << "        return 0;\n"
                  << "    }\n\n";
     }
     
@@ -306,7 +341,7 @@ namespace{
     }
     void printReduce(){
         out_file_cpp << "    using RuleLimit_t = std::pair<int, User_Symbols>;\n"
-                 << "    const map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap{\n";
+                 << "    const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap{\n";
                 //  << "        { Rules::addReg, \n"
                 //  << "            {\n"
                 //  << "                Par{ 1, User_Symbols::reg },\n"
@@ -350,7 +385,7 @@ namespace{
 
                  << "    void _reduce(Tree& t){\n"
                  << "        Rules r{ t.matched_rules.at(0).first };\n"
-                 << "        vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };\n"
+                 << "        std::vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };\n"
                  << "        int count{ 0 };\n"
                  << "        _reduceAux(t, limit, count);\n"
                  << "        action(r, t);\n"
@@ -367,17 +402,31 @@ namespace{
             if(write.has_value()) out_file_cpp << "        RegAlloc::_setWriteInstruction(Instruction{ {" << write.value().template_instruction << "}, {} });\n";
             out_file_cpp << "    }\n\n";
         }
+        auto alg = Helper::getAlgorithms();
 
-        out_file_cpp
-            << "    void generateCode(Tree &t) {\n"
+        if(alg.dynamicProgramming) out_file_cpp
+            << "    void matchDynamicProgramming(Tree &t) {\n"
             << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
-            << "        _label(t);\n"
+            << "        _label(t, costDP);\n"
+            << "        _reduce(t);\n"
+            << "    }\n\n";
+        if(alg.dynamicProgramming) out_file_cpp
+            << "    void matchMinimalMunch(Tree &t) {\n"
+            << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
+            << "        _label(t, costMinMunch);\n"
+            << "        _reduce(t);\n"
+            << "    }\n\n";
+        if(alg.dynamicProgramming) out_file_cpp
+            << "    void matchMaximalMunch(Tree &t) {\n"
+            << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
+            << "        _label(t, costMaxMunch);\n"
             << "        _reduce(t);\n"
             << "    }\n\n";
     }
 
 
     void printHpp(string output_file_name){
+        auto alg = Helper::getAlgorithms();
         string define_name{};
         output_file_name = output_file_name.substr(output_file_name.find_last_of("/") + 1);
         for( char c: output_file_name ) define_name += toupper(c);
@@ -388,11 +437,11 @@ namespace{
                    
                    << "#include<map>\n"
                    << "#include<vector>\n\n"
+
+                   << "    /* Classe do usuário */\n"
+                   << "class Tree;\n\n"
                    
                    << "namespace Yamg{\n\n"
-                   
-                   << "        /* Classe do usuário */\n"
-                   << "    class Tree;\n\n"
                    
                    << "        /* Enums */\n";
 //                   << "    enum class Rules: int;\n"
@@ -448,13 +497,16 @@ namespace{
                    
                    out_file_h << "        /* Funções */\n"
                    << "    // MyPair     isFinalState(int state, Tree=Tree());\n"
-                   << "    StateArray matchTree(Tree&, StateArray={0});\n"
-                   << "    int    action(Rules r, Tree &t);\n"
-                   << "    cost_t cost(Rules, Tree);\n"
+//                   << "    StateArray matchTree(Tree&, StateArray={0});\n"
+//                   << "    int    action(Rules r, Tree &t);\n"
+//                   << "    cost_t cost(Rules, Tree);\n"
                    // << "    void   label(Tree&);\n"
                    // << "    void   reduce(Tree&);\n"
-                   << "    void   generateCode(Tree&);\n\n"
-                   
+                   << (alg.dynamicProgramming ? "    void matchDynamicProgramming(Tree&);\n" : "")
+                   << (alg.maxMunch ?           "    void matchMaximalMunch(Tree&);\n" : "")
+                   << (alg.minMunch ?           "    void matchMinimalMunch(Tree&);\n" : "")
+                   << "\n"
+
                    << "}\n\n"
                    
                    << "#endif\n";
@@ -465,7 +517,7 @@ namespace{
 
     /* Função principal */
 void CodeGenerator::generate(string output_file_name){
-    
+
     if(output_file_name.empty()) output_file_name = "yamg";
     out_file_cpp.open(output_file_name+".cpp", ios::out | ios::trunc);
     out_file_h.open(output_file_name+".hpp", ios::out | ios::trunc);
@@ -478,7 +530,9 @@ void CodeGenerator::generate(string output_file_name){
     unique_ptr<table_t> table = generateTable(rules);
 
     printTableAndFinalStates(table.get());
-    printCost();
+    printCostDP();
+    printCostMinMunch();
+    printCostMaxMunch();
     printMatchTree();
     printLabel();
     printAction();

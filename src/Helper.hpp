@@ -9,18 +9,15 @@
 using namespace std;
 
 class Helper {
-    
-    private:
-
-        static bool hadError;
-
-        static MyArray<string> terminals;
-        static MyArray<string> non_terminals;
-        static MyArray<Rule> rules;
-        static code_t user_code;
-        static code_t header_code;
 
     public:
+
+        enum class AlgorithmValues { DYNAMIC_PROGRAMMING, MINIMAL_MUNCH, MAXIMAL_MUNCH };
+        struct Algorithms {
+            bool dynamicProgramming;
+            bool minMunch;
+            bool maxMunch;
+        };
 
             /* A classe não pode ser instanciada */
         Helper() = delete;
@@ -49,10 +46,23 @@ class Helper {
         static code_t& getHeader();
         static MyArray<string>& getTerms();
         static MyArray<string>& getNonTerms();
+        static void setAlgorithm(AlgorithmValues);
+        static Algorithms getAlgorithms();
 
         static void semanticError(const string &str);
         static void setError();
         static bool getError();
+
+    private:
+
+        static bool hadError;
+
+        static MyArray<string> terminals;
+        static MyArray<string> non_terminals;
+        static MyArray<Rule> rules;
+        static code_t user_code;
+        static code_t header_code;
+        static Algorithms algorithms;
 
 };
 
