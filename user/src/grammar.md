@@ -1,6 +1,13 @@
 {
     #include"../src/Tree.h"
+    #include<iostream>
 }
+
+%alg MAXIMAL_MUNCH
+%alg DYNAMIC_PROGRAMMING
+%alg MINIMAL_MUNCH
+
+%term COMMAND
 
 %term RETURN
 %term WHILE
@@ -40,7 +47,7 @@
 
 %%
 
-registlamoi <- reg: ADD(reg,CONST) {} = {};
+registlamoi <- reg: ADD(reg,CONST) { return $cost[0]; } = { std::cout << $[0] << " " << $node[0].dolmes; };
 
 %%
 

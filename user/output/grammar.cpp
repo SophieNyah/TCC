@@ -5,25 +5,27 @@
 #include"../../src/Tree.hpp"
 
 #include"../src/Tree.h"
+    #include<iostream>
 
 namespace Yamg{
 
     using cost_t = int;
     using rule_number_t = Rules;
     using MyPair = std::pair<rule_number_t, cost_t>;
+    typedef int (*costFunction_t)(Rules, Tree);
 
     const int infinity{ std::numeric_limits<int>::max() };
 
     cost_t cost(Rules, Tree);
 
-    const int recognition_table[4][33]{
-        {   0,    0,    0,    0,    1,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0},
-        {   0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    2},
-        {   0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    3,    0},
-        {   0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0},
+    const int recognition_table[4][34]{
+        {   0,    0,    0,    0,    0,    1,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0},
+        {   0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    2},
+        {   0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    3,    0},
+        {   0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0},
     };
 
-    MyPair isFinalState(int state, Tree t){
+    MyPair isFinalState(int state, Tree t, costFunction_t cost){
         switch(state){
             case    3: return MyPair{ Rules::registlamoi, cost(Rules::registlamoi, t) };
             default: return MyPair{ Rules::null, -1 };
@@ -37,15 +39,35 @@ namespace Yamg{
         }
     }
 
-    int cost(Rules r, Tree t){
+    int costDP(Rules r, Tree t){
         switch(r){
             case Rules::registlamoi :
-                
+                return t.getChildCost(0);
                 break;
             default:
                 t.getChildCost(0) = infinity;
                 return infinity;
         }
+    }
+
+    int costMinMunch(Rules r, Tree t) {
+        switch(r) {
+            case Rules::registlamoi :
+                return 3;
+                break;
+            default:
+                return infinity;
+            }
+    }
+
+    int costMaxMunch(Rules r, Tree t) {
+        switch(r) {
+            case Rules::registlamoi :
+                return -3;
+                break;
+            default:
+                return infinity;
+            }
     }
 
     using SymbolArray = std::vector<int>; 
@@ -73,15 +95,15 @@ namespace Yamg{
         return states;
     }
 
-    void _label(Tree& t){
+    void _label(Tree& t, costFunction_t cost){
         for( int i=0; i<t.children_size; i++ ){
             Tree& c{ t.getChildReference(i) };
-            _label(c);
+            _label(c, cost);
         }
         StateArray final_states{};
         matchTree(t, final_states);
         for( int state: final_states ){
-            MyPair s{ isFinalState(state, t) };
+            MyPair s{ isFinalState(state, t, cost) };
             if( s.second <= t.matched_rules.at(0).second ){
                 t.matched_rules.insert(t.matched_rules.begin(), s);
             }else{
@@ -94,14 +116,15 @@ namespace Yamg{
     int action(Rules r, Tree &t){
         switch(r){
             case Rules::registlamoi :
-                {}
+                { std::cout << t.getChildName(0) << " " << t.getChild(0).dolmes; }
                 break;
             default: break;
         }
-        return 0;    }
+        return 0;
+    }
 
     using RuleLimit_t = std::pair<int, User_Symbols>;
-    const map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap{
+    const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap{
         { Rules::registlamoi,
             {
                 RuleLimit_t{ 1, User_Symbols::reg },
@@ -126,7 +149,7 @@ namespace Yamg{
 
     void _reduce(Tree& t){
         Rules r{ t.matched_rules.at(0).first };
-        vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };
+        std::vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };
         int count{ 0 };
         _reduceAux(t, limit, count);
         action(r, t);
@@ -148,9 +171,21 @@ namespace Yamg{
         RegAlloc::_setWriteInstruction(Instruction{ {"sw %o, %o($sp)"}, {} });
     }
 
-    void generateCode(Tree &t) {
+    void matchDynamicProgramming(Tree &t) {
         _setRegisters();
-        _label(t);
+        _label(t, costDP);
+        _reduce(t);
+    }
+
+    void matchMinimalMunch(Tree &t) {
+        _setRegisters();
+        _label(t, costMinMunch);
+        _reduce(t);
+    }
+
+    void matchMaximalMunch(Tree &t) {
+        _setRegisters();
+        _label(t, costMaxMunch);
         _reduce(t);
     }
 
