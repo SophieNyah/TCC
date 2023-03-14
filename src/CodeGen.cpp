@@ -33,15 +33,6 @@ namespace{
 
         /* Funções locais */
 
-    // int calculateCost(BasicTree& tree){
-    //     int cost = 0 + tree.cost.integer_part;
-    //     for( int i: tree.cost.cost_directives ){
-    //         BasicTree t = tree.getChild(i).value();
-    //         cost += calculateCost(t);
-    //     }
-    //     return cost;
-    // }
-
     void generateNonTermsMap(){
         int i=0;
         MyArray<string> terms = Helper::getTerms();
@@ -66,35 +57,13 @@ namespace{
         
         /* Includes */
         out_file_cpp << "#include<map>\n"
-                 << "#include<limits>\n"
-                 << "#include\"" << include_name << ".hpp\"\n"
-                 << (RegAlloc::_isAllocatorSet() ? "#include\"../../src/RegAlloc.hpp\"\n" : "")
-                 << "#include\"../../src/Tree.hpp\"\n\n";
+                        "#include<limits>\n"
+                        "#include<cassert>\n"
+                        "#include<algorithm>\n"
+                        "#include\"" << include_name << ".hpp\"\n"
+                     << (RegAlloc::_isAllocatorSet() ? "#include\"../../src/RegAlloc.hpp\"\n" : "")
+                     << "#include\"../../src/Tree.hpp\"\n\n";
 
-
-//        /* map de (regra, não-terminal) */
-//        out_file_cpp << "const std::map<Rules, int> Rules_Non_Terminals{\n";
-//        for( Rule r: Helper::getRules() ){
-//            int num{ user_symbols.at(r.getSymbol()) };
-//            out_file_cpp << printTab(1) << "{ Rules::" << r.getName() << ", " << num << " },\n";
-//        }
-//        out_file_cpp << "};\n\n";
-//
-//
-//        /* Variáveis de delimitação do enum */
-//        out_file_cpp << "const int TERMINALS_START     = " << 0 << ";\n";
-//        out_file_cpp << "const int TERMINALS_END       = " << Helper::getTerms().size() - 1 << ";\n";
-//        out_file_cpp << "const int NON_TERMINALS_START = " << Helper::getTerms().size() << ";\n";
-//        out_file_cpp << "const int NON_TERMINALS_END   = " << user_symbols.size() - 1 << ";\n";
-//
-//        /* Enum de não-terminais */
-//        out_file_cpp << "enum class User_Symbols {\n";
-//        out_file_cpp << printTab(1) << "null = -1,\n";
-//        for( auto symbol: user_symbols ){
-//            out_file_cpp << printTab(1) << symbol.first << " = " << symbol.second << ",\n";
-//        }
-//        out_file_cpp << "};\n\n";
-        
 
         /* Header do usuário */
         out_file_cpp << Helper::getHeader() << "\n\n";
@@ -200,7 +169,7 @@ namespace{
             out_file_cpp << "            case " << std::setw(4) << f.first << ": return MyPair{ Rules::"
                 << f.second.first << ", cost(Rules::" << f.second.first << ", t) };\n";
         }
-        out_file_cpp << "            default: return MyPair{ Rules::null, -1 };\n"
+        out_file_cpp << "            default: return MyPair{ Rules::null, infinity };\n"
                      << "        }\n"
                      << "    }\n\n";
 
@@ -212,7 +181,27 @@ namespace{
                      << "        }\n"
                      << "    }\n\n";
     }
-    void printCostDP(){
+    void printTermsUtil() {
+        out_file_cpp << "    bool isTerm(int user_symbol){\n"
+                        "        if(user_symbol >= TERMINALS_START && user_symbol <= TERMINALS_END) return true;\n"
+                        "        else return false;\n"
+                        "    }\n"
+                        "    bool isNonTerm(int user_symbol){\n"
+                        "        if(user_symbol >= NON_TERMINALS_START && user_symbol <= NON_TERMINALS_END) return true;\n"
+                        "        else return false;\n"
+                        "    }\n\n";
+    }
+    void printRulesSize() {
+        out_file_cpp <<     "    int ruleSize(Rules r) {\n"
+                            "        switch(r) {\n";
+        for(Rule r: Helper::getRules()){
+            // FIXME: essa função precisa considerar possíveis sub-árvores
+            out_file_cpp << "            case Rules::" << r.getName() << ": return " << r.getPattern().children_size+1 << ";\n";
+        }
+        out_file_cpp <<     "        }\n"
+                            "    }\n\n";
+    }
+    void _printCostDP(){
         if(!Helper::getAlgorithms().dynamicProgramming) return;
         out_file_cpp << "    int costDP(Rules r, Tree t){\n"
                      << "        switch(r){\n";
@@ -231,14 +220,20 @@ namespace{
                  << "        }\n"
                  << "    }\n\n";
     }
-    void printCostMinMunch() {
+    void _printCostMinMunch() {
         if(!Helper::getAlgorithms().minMunch) return;
         out_file_cpp << "    int costMinMunch(Rules r, Tree t) {\n"
                      << "        switch(r) {\n";
 
         for( Rule r: Helper::getRules() ) {
+            int patternCost = r.getPattern().nonTermsSize(Helper::isNonTerm) + r.getPattern().nonTermsSize(Helper::isTerm);
+//            int patternCost = r.getPattern().size();
+            std::string nonTermsCost{};
+//            for(int nonTerm: r.getPattern().nonTermsIndexes(Helper::isNonTerm)) {
+//                nonTermsCost += " + t.getChildCost(" + std::to_string(nonTerm) + ")";
+//            }
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
-                         << printTab(4) << "return " << r.getPattern().size() << ";\n"
+                         << printTab(4) << "return " << patternCost << nonTermsCost << ";\n"
                          << printTab(4) << "break;\n";
         }
         out_file_cpp << "            default:\n"
@@ -246,20 +241,42 @@ namespace{
                      << "            }\n"
                      << "    }\n\n";
     }
-    void printCostMaxMunch() {
+    void _printCostMaxMunch() {
         if(!Helper::getAlgorithms().maxMunch) return;
         out_file_cpp << "    int costMaxMunch(Rules r, Tree t) {\n"
                      << "        switch(r) {\n";
 
         for( Rule r: Helper::getRules() ) {
+//            int patternCost = r.getPattern().nonTermsSize(Helper::isNonTerm) + 1;
+            int patternCost = r.getPattern().size();
+            std::string nonTermsCost{};
+//            for(int nonTerm: r.getPattern().nonTermsIndexes(Helper::isNonTerm)) {
+//                nonTermsCost += " - t.getChildCost(" + std::to_string(nonTerm) + ")";
+//            }
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
-                         << printTab(4) << "return " << -r.getPattern().size() << ";\n"
+                         << printTab(4) << "return -" << patternCost << nonTermsCost << ";\n"
                          << printTab(4) << "break;\n";
         }
         out_file_cpp << "            default:\n"
                      << "                return infinity;\n"
                      << "            }\n"
+//                     << "        switch(r) {\n";
+//
+//        for( Rule r: Helper::getRules() ) {
+//            out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
+//                         << printTab(4) << "return " << -r.getPattern().size() << ";\n"
+//                         << printTab(4) << "break;\n";
+//        }
+//        out_file_cpp << "            default:\n"
+//                     << "                return infinity;\n"
+//                     << "            }\n"
+//                     << "        return -costMinMunch(r, t);\n"
                      << "    }\n\n";
+    }
+    void printCost() {
+        _printCostDP();
+        _printCostMinMunch();
+        _printCostMaxMunch();
     }
     void printMatchTree(){
         out_file_cpp
@@ -299,10 +316,10 @@ namespace{
         << "        matchTree(t, final_states);\n"
         << "        for( int state: final_states ){\n"
         << "            MyPair s{ isFinalState(state, t, cost) };\n"
-        << "            if( s.second <= t.matched_rules.at(0).second ){\n"
-        << "                t.matched_rules.insert(t.matched_rules.begin(), s);\n"
-        << "            }else{\n"
-        << "                t.matched_rules.push_back(s);\n"
+        << "            auto exists = std::find_if(t.matched_rules.begin(), t.matched_rules.end(), [s](std::pair<Yamg::Rules, int> r)->bool { return s.first == r.first; });\n"
+        << "            if(exists == t.matched_rules.end()) {\n"
+        << "                auto pos = std::find_if(t.matched_rules.begin(), t.matched_rules.end(), [s](std::pair<Yamg::Rules, int> r) -> bool { return r.second > s.second; });\n"
+        << "                t.matched_rules.insert(pos, s);\n"
         << "            }\n"
         << "            t.non_terminal.push_back(Rules_Non_Terminals.at(s.first));\n"
         << "        }\n"
@@ -314,23 +331,52 @@ namespace{
         for( Rule r: Helper::getRules() ){
             string replace_with[2]{"t.getChildName(", ")"};
             string act = findAndReplace(r.getAction(), replace_with, "\\$\\[(\\d+)\\]");
+            r.getPattern().map(
+                    [&replace_with](TemplateTree<BasicTree> *t, auto findReplace) -> void {
+                        t->setAction(findReplace(t->getAction(), replace_with, "\\$\\[(\\d+)\\]"));
+                    },
+                    findAndReplace
+            );
             replace_with[0] = "t.getChild(";
-//            replace_with[1] = ").value()";
             act = findAndReplace(act, replace_with, "\\$node\\[(\\d+)\\]");
+            r.getPattern().map(
+                [&replace_with](TemplateTree<BasicTree> *t, auto findReplace) -> void {
+                    t->setAction(findReplace(t->getAction(), replace_with, "\\$node\\[(\\d+)\\]"));
+                },
+                findAndReplace
+            );
+            r.getPattern().map([](TemplateTree<BasicTree> *t, string *act)->void { act->append(t->getAction());}, &act);
 
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
-                     << printTab(4) << act << '\n'
-                     << printTab(4) << "break;\n";
+                         << printTab(4) << act << '\n';
+            out_file_cpp << printTab(4) << "break;\n";
         }
         out_file_cpp << "            default: break;\n"
                  << "        }\n"
                  << "        return 0;\n"
                  << "    }\n\n";
     }
-    
+
+    void printCheckRule() {
+        out_file_cpp << "    bool checkRule(Tree &t, std::vector<RuleLimit_t> limit) {\n"
+                        "        int last_index;\n"
+                        "        if(t.children_size+1 != ruleSize(t.matched_rules[0].first)) return false;\n"
+                        "//        for(RuleLimit_t l: limit) {\n"
+                        "//            if(t.children_size < l.first) return false;\n"
+                        "//            if(!isTerm((int)l.second)) {\n"
+                        "//                if (t.getImmediateChild(l.first).getNonTerms()[0] != (int) l.second) return false;\n"
+                        "//            }\n"
+                        "//            last_index = l.first+1;\n"
+                        "//        }\n"
+                        "//        for(int i=last_index; i<=t.children_size; i++) {\n"
+                        "//            Tree child = t.getImmediateChild(i);\n"
+                        "//            if(isNonTerm(child.getNonTerms()[0])) return false;\n"
+                        "//        }\n"
+                        "        return true;\n"
+                        "    }\n\n";
+    }
     int printReduceAux(BasicTree& t, int count=0){
         if( Helper::isNonTerm(t.getName())  ||  (count==0 && t.children_size==0) ){
-        // if( t.children_size == 0 ){
             out_file_cpp << "                RuleLimit_t{ " << count << ", User_Symbols::" << t.getName() << " },\n";
         }
         
@@ -342,22 +388,6 @@ namespace{
     void printReduce(){
         out_file_cpp << "    using RuleLimit_t = std::pair<int, User_Symbols>;\n"
                  << "    const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap{\n";
-                //  << "        { Rules::addReg, \n"
-                //  << "            {\n"
-                //  << "                Par{ 1, User_Symbols::reg },\n"
-                //  << "                Par{ 2, User_Symbols::CONST },\n"
-                //  << "            }\n"
-                //  << "        },\n"
-                //  << "        { Rules::addConst, \n"
-                //  << "            {\n"
-                //  << "                Par{ 1, User_Symbols::CONST },\n"
-                //  << "            }\n"
-                //  << "        },\n"
-                //  << "        { Rules::regist, \n"
-                //  << "            {\n"
-                //  << "                Par{ 0, User_Symbols::CONST },\n"
-                //  << "            }\n"
-                //  << "        },\n"
         for( Rule r: Helper::getRules() ){
             out_file_cpp << "        { Rules::" << r.getName() << ",\n"
                      << "            {\n";
@@ -368,28 +398,34 @@ namespace{
         }
         out_file_cpp << "    };\n\n"
 
-                 << "    void _reduce(Tree&);\n"
-                 << "    void _reduceAux(Tree& t, std::vector<RuleLimit_t>& limit, int& count){\n"
-                 << "        if( count == limit.at(0).first ){\n"
-                 << "            limit.erase(limit.begin());\n"
-                 << "            if( count != 0 ) _reduce(t);\n"
-                 << "            return;\n"
-                 << "        }\n\n"
+                        "    void _reduce(Tree&);\n"
+                        "    void _reduceAux(Tree& t, std::vector<RuleLimit_t>& limit, int& count){\n"
+                        "        if( count == limit.at(0).first ){\n"
+                        "            limit.erase(limit.begin());\n"
+                        "            if( count != 0 ) _reduce(t);\n"
+                        "            return;\n"
+                        "        }\n\n"
                  
-                 << "        for( Tree c: t.getChildren() ){\n"
-                 << "            count++;\n"
-                 << "            _reduceAux(c, limit, count);\n"
-                 << "            if( limit.empty() ) break;\n"
-                 << "        }\n"
-                 << "    }\n\n"
+                        "        for( Tree c: t.getChildren() ){\n"
+                        "            count++;\n"
+                        "            _reduceAux(c, limit, count);\n"
+                        "            if( limit.empty() ) break;\n"
+                        "        }\n"
+                        "    }\n\n"
 
-                 << "    void _reduce(Tree& t){\n"
-                 << "        Rules r{ t.matched_rules.at(0).first };\n"
-                 << "        std::vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };\n"
-                 << "        int count{ 0 };\n"
-                 << "        _reduceAux(t, limit, count);\n"
-                 << "        action(r, t);\n"
-                 << "    }\n\n";
+                        "    void _reduce(Tree& t){\n"
+                        "        Rules r{ t.matched_rules.at(0).first };\n"
+                        "        std::vector<RuleLimit_t> limit{ RulesLimitsMap.at(r) };\n"
+                        "        while(!checkRule(t, limit)){\n"
+                        "            t.matched_rules.erase(t.matched_rules.begin());\n"
+                        "            assert(t.matched_rules[0].first!=Rules::null && \"NENHUMA REGRA ENCONTRADA\\n\");\n"
+                        "            r = t.matched_rules.at(0).first;\n"
+                        "            limit = RulesLimitsMap.at(r);\n"
+                        "        }\n"
+                        "        int count{ 0 };\n"
+                        "        _reduceAux(t, limit, count);\n"
+                        "        action(r, t);\n"
+                        "    }\n\n";
     }
     void printGenerateCode(){
         if(RegAlloc::_isAllocatorSet()) {
@@ -402,26 +438,26 @@ namespace{
             if(write.has_value()) out_file_cpp << "        RegAlloc::_setWriteInstruction(Instruction{ {" << write.value().template_instruction << "}, {} });\n";
             out_file_cpp << "    }\n\n";
         }
-        auto alg = Helper::getAlgorithms();
 
+        out_file_cpp << "    void match(Tree&t, costFunction_t cost) {\n"
+                     << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
+                     << "        _label(t, cost);\n"
+                        "        _reduce(t);\n"
+                        "    }\n\n";
+
+        auto alg = Helper::getAlgorithms();
         if(alg.dynamicProgramming) out_file_cpp
             << "    void matchDynamicProgramming(Tree &t) {\n"
-            << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
-            << "        _label(t, costDP);\n"
-            << "        _reduce(t);\n"
-            << "    }\n\n";
+            << "        match(t, costDP);\n"
+            << "    }\n";
         if(alg.dynamicProgramming) out_file_cpp
             << "    void matchMinimalMunch(Tree &t) {\n"
-            << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
-            << "        _label(t, costMinMunch);\n"
-            << "        _reduce(t);\n"
-            << "    }\n\n";
+            << "        match(t, costMinMunch);\n"
+            << "    }\n";
         if(alg.dynamicProgramming) out_file_cpp
             << "    void matchMaximalMunch(Tree &t) {\n"
-            << (RegAlloc::_isAllocatorSet() ? "        _setRegisters();\n" : "")
-            << "        _label(t, costMaxMunch);\n"
-            << "        _reduce(t);\n"
-            << "    }\n\n";
+            << "        match(t, costMaxMunch);\n"
+            << "    }\n";
     }
 
 
@@ -444,9 +480,6 @@ namespace{
                    << "namespace Yamg{\n\n"
                    
                    << "        /* Enums */\n";
-//                   << "    enum class Rules: int;\n"
-//                   << "    enum class User_Symbols: int;\n\n"
-//                    /* map de (regra, não-terminal) */
                     /* Enum de regras */
                     out_file_h << printTab(1) << "enum class Rules {\n"
                                  << "        null = -1,\n";
@@ -473,13 +506,6 @@ namespace{
                    
                    << "        /* Variáveis */\n"
                    << "    extern const int infinity;\n";
-//                   << "    extern const int TERMINALS_START;\n"
-//                   << "    extern const int TERMINALS_END;\n"
-//                   << "    extern const int NON_TERMINALS_START;\n"
-//                   << "    extern const int NON_TERMINALS_END;\n"
-//                   << "    extern const int recognition_table[17][8];\n"
-//                   << "    extern const std::map<Rules, int> Rules_Non_Terminals;\n"
-//                   << "    extern const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap;\n\n"
 
 
                     /* Variáveis de delimitação do enum */
@@ -496,12 +522,6 @@ namespace{
                     out_file_h << printTab(1) << "};\n\n";
                    
                    out_file_h << "        /* Funções */\n"
-                   << "    // MyPair     isFinalState(int state, Tree=Tree());\n"
-//                   << "    StateArray matchTree(Tree&, StateArray={0});\n"
-//                   << "    int    action(Rules r, Tree &t);\n"
-//                   << "    cost_t cost(Rules, Tree);\n"
-                   // << "    void   label(Tree&);\n"
-                   // << "    void   reduce(Tree&);\n"
                    << (alg.dynamicProgramming ? "    void matchDynamicProgramming(Tree&);\n" : "")
                    << (alg.maxMunch ?           "    void matchMaximalMunch(Tree&);\n" : "")
                    << (alg.minMunch ?           "    void matchMinimalMunch(Tree&);\n" : "")
@@ -530,12 +550,13 @@ void CodeGenerator::generate(string output_file_name){
     unique_ptr<table_t> table = generateTable(rules);
 
     printTableAndFinalStates(table.get());
-    printCostDP();
-    printCostMinMunch();
-    printCostMaxMunch();
+    printTermsUtil();
+    printRulesSize();
+    printCost();
     printMatchTree();
     printLabel();
     printAction();
+    printCheckRule();
     printReduce();
     printGenerateCode();
 

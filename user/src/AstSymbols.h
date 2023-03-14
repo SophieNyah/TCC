@@ -52,16 +52,26 @@ namespace AstSymbols {
     };
 
     class Programa {
-        std::map<std::string, msa::Symbol> variaveis_globais;
-        std::vector<Funcao> funcoes;
         Programa(msa::HashTable, std::vector<Funcao>);
+
+        std::vector<Funcao> funcoes;
+        std::map<std::string, msa::Symbol> variaveis_globais;
+
         static Programa programa;
+        static std::map<std::string, std::string> string_literals;
 
         public:
             static Programa leArquivoC();
 
-            const std::optional<msa::Symbol> getGlobalVar(const std::string);
-            const std::vector<Funcao> getFuncoes();
+            std::optional<msa::Symbol> getGlobalVar(const std::string);
+            std::vector<Funcao> getFuncoes();
+            /**
+             *
+             * @param name Nome da variável que corresponde ao literal
+             * @param str Literal de string que será inserido
+             * @return True caso a variável tenha sido inserida, False caso já existisse uma
+             */
+            static bool insertStringLiteral(const std::string name, const std::string str);
 
     };
 

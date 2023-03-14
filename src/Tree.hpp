@@ -36,12 +36,37 @@ class TemplateTree{
         Node_type getType(){ return this->type; }
         int getSymbol(){ return this->user_symbol; }
         code_t getAction(){ return this->action; }
+        void setAction(code_t acao){ this->action = acao; }
         int size(){
             int size{ 1 };
             for(T child: this->children){
                 size += child.size();
             }
             return size;
+        }
+        int nonTermsSize(bool (*isNonTerm)(const std::string&)) {
+            int size{0};
+            if(isNonTerm(this->name)) size++;
+            for(T child: this->children) {
+                size += child.nonTermsSize(isNonTerm);
+            }
+            return size;
+        }
+        std::vector<int> nonTermsIndexes(bool (*isNonTerm)(const std::string&), int currIteration=0){
+            std::vector<int> nonTerms{};
+            if(isNonTerm(this->name))  nonTerms.emplace_back(currIteration);
+            for(T child: this->children){
+                currIteration++;
+                auto v = child.nonTermsIndexes(isNonTerm, currIteration);
+                nonTerms.insert(nonTerms.end(), v.begin(), v.end());
+            }
+            return nonTerms;
+        }
+
+        template<typename Funcao, typename... Args>
+        void map(Funcao f, Args... a) {
+            f(this, a...);
+            for(T child: this->children) { child.map(f, a...); }
         }
 
             /* Atributos */
@@ -123,6 +148,10 @@ class YamgTree: public TemplateTree<TreeType>{
             }
             return dynamic_cast<TreeType*>(this);
         }
+        TreeType* _getImmediateChild(int &child) {
+            if(child == 0) return dynamic_cast<TreeType*>(this);
+            return &this->children.at(child-1);
+        }
 
     protected:
 
@@ -159,6 +188,8 @@ class YamgTree: public TemplateTree<TreeType>{
         cost_t cost{ 0 };
         Cost_expression cost_expression{};
 
+        MyArray<int> getNonTerms() { return this->non_terminal; }
+
         int& getChildCost(int child){
             return this->_getChildCost(child);
         }
@@ -169,6 +200,10 @@ class YamgTree: public TemplateTree<TreeType>{
 
         TreeType getChild(int index) {
             return *(this->_getChild(index));
+        }
+
+        TreeType getImmediateChild(int index) {
+            return *(this->_getImmediateChild(index));
         }
 };
 

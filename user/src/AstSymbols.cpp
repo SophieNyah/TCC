@@ -65,6 +65,7 @@ namespace AstSymbols {
      *                      *
      ************************/
     Programa Programa::programa{nullptr, {}};
+    std::map<std::string, std::string> Programa::string_literals{};
     Programa::Programa(msa::HashTable var_globais, std::vector<Funcao> funcoes):
         variaveis_globais{ hashTableToMap(var_globais) },
         funcoes{ funcoes }
@@ -88,7 +89,7 @@ namespace AstSymbols {
         return programa;
     }
 
-    const std::optional<msa::Symbol> Programa::getGlobalVar(const std::string nome) {
+    std::optional<msa::Symbol> Programa::getGlobalVar(const std::string nome) {
         try {
             msa::Symbol sym = this->variaveis_globais.at(nome);
             return sym;
@@ -97,8 +98,13 @@ namespace AstSymbols {
         }
     }
 
-    const std::vector<Funcao> Programa::getFuncoes() {
+    std::vector<Funcao> Programa::getFuncoes() {
         return funcoes;
+    }
+
+    bool Programa::insertStringLiteral(const std::string name, const std::string str) {
+        auto p = Programa::string_literals.insert(std::pair<std::string, std::string>(str, name));
+        return p.second;
     }
 
 }

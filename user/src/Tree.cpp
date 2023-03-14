@@ -4,9 +4,38 @@
 
 #include <iostream>
 #include "Tree.h"
+#include "AstSymbols.h"
 #include "../output/grammar.hpp"
 
 struct Tree::Private{
+
+    static std::string newStringLiteralName(){
+        static int iteration=0;
+        std::string name{ "__literal_" + iteration };
+        iteration++;
+        return name;
+    }
+
+    static Tree createExpressionNode(msa::expression *exp) {
+        switch(exp->node_type) {
+            case msa::yytokentype::ADD:           return Tree{"ADD", Yamg::User_Symbols::ADD, Node_type::operacao};
+            case msa::yytokentype::SUB:           return Tree{"SUB", Yamg::User_Symbols::SUB, Node_type::operacao};
+            case msa::yytokentype::MUL:           return Tree{"MUL", Yamg::User_Symbols::MUL, Node_type::operacao};
+
+            case msa::yytokentype::EQUALS:        return Tree{"EQUALS", Yamg::User_Symbols::EQUALS, Node_type::operacao};
+            case msa::yytokentype::ASSIGN:        return Tree{"ASSIGN", Yamg::User_Symbols::ASSIGN, Node_type::operacao};
+
+            case msa::yytokentype::FUNCTION_CALL: return Tree{exp->node_value.sym->id, Yamg::User_Symbols::FUNCTION_CALL, Node_type::operacao};
+            case msa::yytokentype::IDENTIFIER:    return Tree{exp->node_value.sym->id, Yamg::User_Symbols::VARIABLE, Node_type::registrador};
+            case msa::yytokentype::NUM_INT:       return Tree{std::to_string(exp->node_value.num), Yamg::User_Symbols::CONST, Node_type::constante};
+            case msa::yytokentype::STRING:
+            case msa::yytokentype::CHARACTER:
+                AstSymbols::Programa::insertStringLiteral(newStringLiteralName(), exp->node_value.str);
+                return Tree{exp->node_value.str, Yamg::User_Symbols::STRING, Node_type::constante};
+//            default: return Tree{}
+        }
+        return Tree{};
+    }
 
     static Tree commandIf(msa::if_else_t *command){
         Tree ifTree{"IF", Yamg::User_Symbols::IF, Node_type::operacao};
@@ -22,7 +51,7 @@ struct Tree::Private{
         return whileTree;
     }
     static Tree commandFor(msa::for_t *command){
-        Tree forTree{"FOR", Yamg::User_Symbols::IF, Node_type::operacao};
+        Tree forTree{"FOR", Yamg::User_Symbols::FOR, Node_type::operacao};
         forTree.insertChild(commandExpression(command->exp_init));
         forTree.insertChild(commandExpression(command->exp_update));
         forTree.insertChild(commandExpression(command->exp_check));
@@ -30,11 +59,14 @@ struct Tree::Private{
         return forTree;
     }
     static Tree commandReturn(msa::expression *command){
-        Tree returnTree{"RETURN", Yamg::User_Symbols::IF, Node_type::operacao};
+        Tree returnTree{"RETURN", Yamg::User_Symbols::RETURN, Node_type::operacao};
+        returnTree.insertChild(commandExpression(command));
         return returnTree;
     }
     static Tree commandExpression(msa::expression *command){
-        Tree expTree{"EXPRESSION", Yamg::User_Symbols::IF, Node_type::operacao};
+        Tree expTree{ createExpressionNode(command) };
+        if(command->left)  expTree.insertChild(commandExpression(command->left));
+        if(command->right) expTree.insertChild(commandExpression(command->right));
         return expTree;
     }
 
@@ -66,18 +98,18 @@ struct Tree::Private{
     }
 
     static std::string toString(const Tree &t) {
-        std::vector<Tree> children{ t.children };
-        std::string str{ t.name + '(' };
-        for(size_t i=0; i<children.size(); i++) {
-            str.append(toString(children[i]));
-            if(i+1 != children.size()) str.append(", ");
+        std::string str{ t.name };
+        if(t.children.empty()) return str;
+        str.append("(");
+        for(size_t i=0; i<t.children.size(); i++) {
+            str.append(toString(t.children[i]));
+            if(i+1 != t.children.size()) str.append(", ");
         }
         str.append(")");
         return str;
     }
 
 };
-
 
 void Tree::readTree(AstSymbols::Funcao funcao) {
     msa::command_list comandos = funcao.getComandos();
@@ -98,6 +130,7 @@ Yamg::User_Symbols Tree::readUserSymbol(std::string type) {
 }
 
 Tree::Tree() {}
+
 Tree::Tree(const std::string name, const Yamg::User_Symbols symbol, const Node_type type)
     : YamgTree<Tree, AstSymbols::Funcao> { name, symbol, type }
     {}

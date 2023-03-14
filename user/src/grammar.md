@@ -14,15 +14,35 @@
 %term FOR
 %term IF
 
+%term CONST
+%term STRING
+%term VARIABLE
+%term FUNCTION_CALL
+
+%term EXIT
+%term SCANF
+%term PRINTF
+%term SWITCH
+
+%term ASSIGN
+
 %term ADD
 %term SUB
 %term DIV
+%term MUL
 %term MOD
+
+%term RSHIFT
+%term LSHIFT
+
 %term INC
 %term DEC
+%term UNR_PLUS
+%term UNR_MINUS
 %term BIT_OR
 %term BIT_AND
 %term BIT_XOR
+
 %term LOG_AND
 %term LOG_OR
 %term LOG_NOT
@@ -32,22 +52,32 @@
 %term GREAT
 %term LEQ
 %term GEQ
-%term RSHIFT
-%term LSHIFT
-%term ASSIGN
-%term PRINTF
-%term SCANF
-%term EXIT
-%term UNR_PLUS
-%term UNR_MINUS
-%term SWITCH
-%term CONST
 
 %nonterm reg
+%nonterm stmt
 
 %%
 
-registlamoi <- reg: ADD(reg,CONST) { return $cost[0]; } = { std::cout << $[0] << " " << $node[0].dolmes; };
+_var       <- reg: VARIABLE {} = { std::cout << "_var\n"; };
+_const     <- reg: CONST    {} = { std::cout << "_const\n"; };
+_statement <- stmt: reg     {} = { std::cout << "_statement\n"; };
+
+_addConst <- reg: ADD(reg,CONST) {} = { std::cout << "_addConst\n"; };
+_addReg   <- reg: ADD(reg,reg)   {} = { std::cout << "_addReg\n"; };
+_subConst <- reg: SUB({std::cout<<"   teste1\n";}reg,{std::cout<<"    teste2\n";}CONST) {} = { std::cout << "_subConst\n"; };
+_subReg   <- reg: SUB(reg,reg)   {} = { std::cout << "_subReg\n"; };
+_mul      <- reg: MUL(reg,reg)   {} = { std::cout << "_mul\n"; };
+
+_equals <- reg: EQUALS(reg,reg) {} = { std::cout << "_equals\n"; };
+
+_if        <- stmt: IF(reg,stmt)      {} = { std::cout << "_if\n"; };
+_ifElse    <- stmt: IF(reg,stmt,stmt) {} = { std::cout << "_ifElse\n"; };
+_return    <- stmt: RETURN(reg)       {} = { std::cout << "_return\n"; };
+_assign    <- stmt: ASSIGN(reg,reg)   {} = { std::cout << "_assign\n"; };
+_function  <- reg: FUNCTION_CALL      {} = { std::cout << "_functionCall\n"; };
+
+_command <- stmt: COMMAND(stmt,stmt) {} = { std::cout << "_command\n"; };
+_lastCommand <- stmt: COMMAND(stmt)  {} = { std::cout << "_lastCommand\n"; };
 
 %%
 

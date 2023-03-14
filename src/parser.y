@@ -162,16 +162,16 @@ register_declare: NEW_REGISTER IDENTIFIER { RegAlloc::_newReg($2); }
                 | SET_WRITE_INSTRUCTION STRING_LITERAL { RegAlloc::_setWriteInstruction(Instruction($2, {})); }
 ;
 
-tree: tree_token  L_BRACKET  action  tree_list  R_BRACKET
+tree: action tree_token  L_BRACKET  tree_list  R_BRACKET
         { 
-            if(!Helper::isNonTerm($1.first) && !Helper::isTerm($1.first)){
-                Helper::semanticError("Symbol \"" + $1.first + "\" not declared");
+            if(!Helper::isNonTerm($2.first) && !Helper::isTerm($2.first)){
+                Helper::semanticError("Symbol \"" + $2.first + "\" not declared");
             }
 
-            $$ = BasicTree{$1.first, 0, Node_type{ $1.second }, $3};
+            $$ = BasicTree{$2.first, 0, Node_type{ $2.second }, $1};
             for( BasicTree t: $4 ){ $$.insertChild(t); }
         }
-    | tree_token     { $$ = BasicTree{$1.first, 0, Node_type{ $1.second }}; }
+    | action tree_token     { $$ = BasicTree{$2.first, 0, Node_type{ $2.second }, $1}; }
 ;
 
 tree_list: tree_list  COMMA  tree { $1.push_back($3); $$ = $1; }
