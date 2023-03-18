@@ -19,19 +19,9 @@ namespace msa {
 #include <map>
 #include <vector>
 #include <optional>
+#include <fstream>
 
 namespace AstSymbols {
-    class Expressao {
-        Expressao *dir;
-        Expressao *esq;
-        msa::tipos tipo_node;
-        msa::Var_type tipo_expressao;
-        std::variant<int, std::string, std::string, msa::Symbol> valor_node;
-        Expressao(msa::tipos, msa::Var_type, std::variant<int, std::string, std::string, msa::Symbol>, Expressao* = nullptr, Expressao* = nullptr);
-
-        public:
-
-    };
 
     class Funcao {
         std::string nome;
@@ -48,6 +38,9 @@ namespace AstSymbols {
             const msa::Var_type getRetorno();
             const msa::function_prototype getPrototipo();
             const msa::command_list getComandos();
+
+            void generateHeader(std::ofstream& out_file);
+            void generateFooter(std::ofstream& out_file);
 
     };
 
@@ -72,6 +65,7 @@ namespace AstSymbols {
              * @return True caso a variável tenha sido inserida, False caso já existisse uma
              */
             static bool insertStringLiteral(const std::string name, const std::string str);
+            void generateProgramHeader(std::ofstream& out_file);
 
     };
 

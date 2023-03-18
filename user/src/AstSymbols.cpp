@@ -59,6 +59,26 @@ namespace AstSymbols {
         return this->comandos;
     }
 
+    void Funcao::generateHeader(std::ofstream& out_file) {
+        if(this->nome == "main") {
+            out_file << "main:\n";
+        } else {
+            out_file << this->nome << ":\n"
+                                      "subi $sp, $sp, 4\n"
+                                      "sw $ra, 0($sp)\n";
+        }
+    }
+    void Funcao::generateFooter(std::ofstream& out_file) {
+        if(this->nome == "main"){
+            out_file << "li $v0, 10\n"
+                        "syscall\n\n";
+        } else {
+            out_file << "lw $ra, 0($sp)\n"
+                        "addi $sp, $sp, 4\n"
+                        "jr $ra\n\n";
+        }
+    }
+
     /************************
      *                      *
      *   Classe: Programa   *
@@ -80,7 +100,13 @@ namespace AstSymbols {
         std::vector<Funcao> funcoes{};
         for(auto aux = msa::Program_Table.head; aux; aux=aux->next){
             auto func = aux->function;
-            funcoes.emplace_back(Funcao{func.name, func.Local_Symbol_Table, func.return_type, func.f, *func.commands_head});
+            std::string funcName{func.name};
+            Funcao funcao{funcName, func.Local_Symbol_Table, func.return_type, func.f, *func.commands_head};
+            if(funcName == "main"){
+                funcoes.insert(funcoes.begin(), funcao);
+            } else {
+                funcoes.emplace_back(funcao);
+            }
         }
 
         lido = true;
@@ -107,4 +133,9 @@ namespace AstSymbols {
         return p.second;
     }
 
+    void Programa::generateProgramHeader(std::ofstream &out_file) {
+        out_file << ".data:\n\n";
+        // TODO: implementar variáveis globais e literais de string
+        out_file << ".text:\n\n";
+    }
 }

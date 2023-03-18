@@ -209,6 +209,8 @@ namespace{
             string costStr = r.getCost();
             string replace_with[2]{"t.getChildCost(", ")"};
             costStr = findAndReplace(costStr, replace_with, "\\$cost\\[(\\d+)\\]");
+            replace_with[0] = "\n"; replace_with[1] = "                ";
+            costStr = findAndReplace(costStr, replace_with, "\n");
 
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
                      << printTab(4) << costStr << '\n'
@@ -306,24 +308,43 @@ namespace{
         << "    }\n\n";
     }
     void printLabel(){
-        out_file_cpp
-        << "    void _label(Tree& t, costFunction_t cost){\n"
-        << "        for( int i=0; i<t.children_size; i++ ){\n"
-        << "            Tree& c{ t.getChildReference(i) };\n"
-        << "            _label(c, cost);\n"
-        << "        }\n"
-        << "        StateArray final_states{};\n"
-        << "        matchTree(t, final_states);\n"
-        << "        for( int state: final_states ){\n"
-        << "            MyPair s{ isFinalState(state, t, cost) };\n"
-        << "            auto exists = std::find_if(t.matched_rules.begin(), t.matched_rules.end(), [s](std::pair<Yamg::Rules, int> r)->bool { return s.first == r.first; });\n"
-        << "            if(exists == t.matched_rules.end()) {\n"
-        << "                auto pos = std::find_if(t.matched_rules.begin(), t.matched_rules.end(), [s](std::pair<Yamg::Rules, int> r) -> bool { return r.second > s.second; });\n"
-        << "                t.matched_rules.insert(pos, s);\n"
-        << "            }\n"
-        << "            t.non_terminal.push_back(Rules_Non_Terminals.at(s.first));\n"
-        << "        }\n"
-        << "    }\n\n";
+        out_file_cpp <<
+           "    void transitoryRules(Tree &t, StateArray &final_states, costFunction_t cost) {\n"
+           "        SymbolArray symbols{ t.getSymbol() };\n"
+           "        for(int rule: t.non_terminal) symbols.push_back(rule);\n"
+           "        for(int symbol: symbols) {\n"
+           "            if(!isNonTerm(symbol)) continue;\n"
+           "            int state = recognition_table[0][symbol];\n"
+           "            if(isFinalState(state)) {\n"
+           "                if (std::find(final_states.begin(), final_states.end(), state) == final_states.end()) {\n"
+           "                    final_states.emplace_back(state);\n"
+           "                    MyPair s{isFinalState(state, t, cost)};\n"
+           "                    t.non_terminal.emplace_back(Rules_Non_Terminals.at(s.first));\n"
+           "                }\n"
+           "            }\n"
+           "        }\n"
+           "    }\n\n"
+           "    void _label(Tree& t, costFunction_t cost){\n"
+           "        for( int i=0; i<t.children_size; i++ ){\n"
+           "            Tree& c{ t.getChildReference(i) };\n"
+           "            _label(c, cost);\n"
+           "        }\n"
+           "        StateArray final_states{};\n"
+           "        matchTree(t, final_states);\n"
+           "        for (int state: final_states){\n"
+           "            MyPair s{isFinalState(state, t, cost)};\n"
+           "            t.non_terminal.push_back(Rules_Non_Terminals.at(s.first));\n"
+           "        }\n"
+           "        transitoryRules(t, final_states, cost);\n"
+           "        for( int state: final_states ){\n"
+           "            MyPair s{ isFinalState(state, t, cost) };\n"
+           "            auto exists = std::find_if(t.matched_rules.begin(), t.matched_rules.end(), [s](std::pair<Yamg::Rules, int> r)->bool { return s.first == r.first; });\n"
+           "            if(exists == t.matched_rules.end()) {\n"
+           "                auto pos = std::find_if(t.matched_rules.begin(), t.matched_rules.end(), [s](std::pair<Yamg::Rules, int> r) -> bool { return r.second > s.second; });\n"
+           "                t.matched_rules.insert(pos, s);\n"
+           "            }\n"
+           "        }\n"
+           "    }";
     }
     void printAction(){
         out_file_cpp << "    int action(Rules r, Tree &t){\n"
@@ -344,6 +365,14 @@ namespace{
                     t->setAction(findReplace(t->getAction(), replace_with, "\\$node\\[(\\d+)\\]"));
                 },
                 findAndReplace
+            );
+            replace_with[0] = "\n"; replace_with[1] = "                ";
+            act = findAndReplace(act, replace_with, "\n");
+            r.getPattern().map(
+                    [&replace_with](TemplateTree<BasicTree> *t, auto findReplace) -> void {
+                        t->setAction(findReplace(t->getAction(), replace_with, "\n"));
+                    },
+                    findAndReplace
             );
             r.getPattern().map([](TemplateTree<BasicTree> *t, string *act)->void { act->append(t->getAction());}, &act);
 
@@ -450,11 +479,11 @@ namespace{
             << "    void matchDynamicProgramming(Tree &t) {\n"
             << "        match(t, costDP);\n"
             << "    }\n";
-        if(alg.dynamicProgramming) out_file_cpp
+        if(alg.minMunch) out_file_cpp
             << "    void matchMinimalMunch(Tree &t) {\n"
             << "        match(t, costMinMunch);\n"
             << "    }\n";
-        if(alg.dynamicProgramming) out_file_cpp
+        if(alg.maxMunch) out_file_cpp
             << "    void matchMaximalMunch(Tree &t) {\n"
             << "        match(t, costMaxMunch);\n"
             << "    }\n";

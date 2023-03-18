@@ -198,11 +198,11 @@ class YamgTree: public TemplateTree<TreeType>{
             return this->_getChildName(child).second;
         }
 
-        TreeType getChild(int index) {
+        TreeType& getChild(int index) {
             return *(this->_getChild(index));
         }
 
-        TreeType getImmediateChild(int index) {
+        TreeType& getImmediateChild(int index) {
             return *(this->_getImmediateChild(index));
         }
 };

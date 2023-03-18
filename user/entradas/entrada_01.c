@@ -11,6 +11,8 @@ int fat(int n) {
 }
 
 int main() {
+    3 + 4;
+    fat(5);
     printf("%d\n", fat(5));
     return 0;
 }

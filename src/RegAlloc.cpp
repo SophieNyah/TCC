@@ -257,11 +257,12 @@ struct RegAlloc::Private {
 
     //*** Membros públicos ***
 void RegAlloc::allocate() {
+    if(RegAlloc::instructions.empty()) return;
     RegAlloc::Private::liveRangeAnalysis();
     RegAlloc::Private::linearScan();
 }
 
-void RegAlloc::printCode(ostream out_file, bool use_registers) {
+void RegAlloc::printCode(ofstream &out_file, bool use_registers) {
     for(Instruction i: RegAlloc::instructions) {
         out_file << i.printInstruction(use_registers) << '\n';
     }

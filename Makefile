@@ -34,8 +34,11 @@ parser: $(SRC_PATH)/$(LEXICO) $(SRC_PATH)/$(SINTATICO)
 
 lib:
 	ar rcs $(LIB_PATH)/libyamg.a $(OUT_PATH)/CodeGen.o $(OUT_PATH)/Helper.o $(OUT_PATH)/parser.o $(OUT_PATH)/RegAlloc.o $(OUT_PATH)/Rule.o $(OUT_PATH)/scanner.o $(OUT_PATH)/Tree.o
-	#cp $(SRC_PATH)/parser.hpp $(LIB_PATH)/
 	cp $(SRC_PATH)/RegAlloc.hpp $(LIB_PATH)/
+
+lib_user:
+	ar rcs ./user/src/lib/yamg/libyamg.a $(OUT_PATH)/CodeGen.o $(OUT_PATH)/Helper.o $(OUT_PATH)/parser.o $(OUT_PATH)/RegAlloc.o $(OUT_PATH)/Rule.o $(OUT_PATH)/scanner.o $(OUT_PATH)/Tree.o
+	cp $(SRC_PATH)/RegAlloc.hpp ./user/src/lib/yamg/
 
 clean:
 	rm -f src/parser.cpp

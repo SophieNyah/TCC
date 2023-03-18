@@ -2,16 +2,35 @@
 // Created by sophie on 02/03/23.
 //
 
-#include<iostream>
-#include"AstSymbols.h"
+#include <iostream>
+#include "AstSymbols.h"
 #include "Tree.h"
+#include "./lib/yamg/RegAlloc.hpp"
 
 int main() {
     AstSymbols::Programa programa = AstSymbols::Programa::leArquivoC();
-    Tree arvorePrograma{};
-    arvorePrograma.readTree(programa.getFuncoes()[0]);
-    Yamg::matchMaximalMunch(arvorePrograma);
-//    Yamg::matchMinimalMunch(arvorePrograma);
+
+    std::ofstream file{"../output/out.md", std::ios::out | std::ios::trunc};
+    programa.generateProgramHeader(file);
+
+    for(AstSymbols::Funcao funcao: programa.getFuncoes()){
+//        if(funcao.getNome() != "main") continue;
+        Tree arvorePrograma{};
+        arvorePrograma.readTree(funcao);
+
+        Yamg::matchMaximalMunch(arvorePrograma);
+//        Yamg::matchMinimalMunch(arvorePrograma);
+//        Yamg::matchDynamicProgramming(arvorePrograma)
+
+        RegAlloc::allocate();
+
+        funcao.generateHeader(file);
+        RegAlloc::printCode(file);
+        funcao.generateFooter(file);
+
+        RegAlloc::clearInstructions();
+    }
+
     /*
      * Para cada função:
      *      emitir header (nome func, store $ra, etc)

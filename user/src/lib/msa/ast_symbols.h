@@ -39,6 +39,10 @@ enum tipos {
     COM_RETURN,
     COM_EXP,
     COM_BLOCK,
+
+    COM_PRINTF,
+    COM_SCANF,
+    COM_EXIT,
 };
 
 //tipos de variáveis, incluindo ponteiros
@@ -79,6 +83,14 @@ struct for_t{
     struct expression *exp_update;
     struct command_list *commands;
 };
+struct printf_t {
+    char* string;
+    struct expression *exp;
+};
+struct scanf_t {
+    char* string;
+    char* var;
+};
 // struct return_t{
 //     struct expression *exp_return;
 // }
@@ -93,6 +105,9 @@ struct command_list{
         struct for_t *for_com;
         struct expression *return_com;
         struct command_list *block;
+        struct printf_t *printf_com;
+        struct scanf_t *scanf_com;
+        struct expression *exit_com;
     } com;
     struct command_list *next;
 

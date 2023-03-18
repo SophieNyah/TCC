@@ -5,24 +5,38 @@
 #include <iostream>
 #include "Tree.h"
 #include "AstSymbols.h"
-#include "../output/grammar.hpp"
+#include "../output/mips.hpp"
 
-struct Tree::Private{
-
-    static std::string newStringLiteralName(){
-        static int iteration=0;
-        std::string name{ "__literal_" + iteration };
+namespace {
+    std::string newStringLiteralName() {
+        static int iteration = 0;
+        std::string name{"__literal_" + std::to_string(iteration)};
         iteration++;
         return name;
     }
+}
+
+std::string newTempRegister(bool reset) {
+    static int currReg{ 0 };
+    if(reset) {
+        currReg = 3;
+    } else {
+        currReg++;
+        currReg = (currReg%5) + 3;
+    }
+    std::string reg{ "$t" + std::to_string(currReg) };
+    return reg;
+}
+
+struct Tree::Private{
 
     static Tree createExpressionNode(msa::expression *exp) {
         switch(exp->node_type) {
-            case msa::yytokentype::ADD:           return Tree{"ADD", Yamg::User_Symbols::ADD, Node_type::operacao};
-            case msa::yytokentype::SUB:           return Tree{"SUB", Yamg::User_Symbols::SUB, Node_type::operacao};
-            case msa::yytokentype::MUL:           return Tree{"MUL", Yamg::User_Symbols::MUL, Node_type::operacao};
+            case msa::yytokentype::ADD:           return Tree{newTempRegister(), Yamg::User_Symbols::ADD, Node_type::operacao};
+            case msa::yytokentype::SUB:           return Tree{newTempRegister(), Yamg::User_Symbols::SUB, Node_type::operacao};
+            case msa::yytokentype::MUL:           return Tree{newTempRegister(), Yamg::User_Symbols::MUL, Node_type::operacao};
 
-            case msa::yytokentype::EQUALS:        return Tree{"EQUALS", Yamg::User_Symbols::EQUALS, Node_type::operacao};
+            case msa::yytokentype::EQUALS:        return Tree{newTempRegister(), Yamg::User_Symbols::EQUALS, Node_type::operacao};
             case msa::yytokentype::ASSIGN:        return Tree{"ASSIGN", Yamg::User_Symbols::ASSIGN, Node_type::operacao};
 
             case msa::yytokentype::FUNCTION_CALL: return Tree{exp->node_value.sym->id, Yamg::User_Symbols::FUNCTION_CALL, Node_type::operacao};
@@ -32,7 +46,6 @@ struct Tree::Private{
             case msa::yytokentype::CHARACTER:
                 AstSymbols::Programa::insertStringLiteral(newStringLiteralName(), exp->node_value.str);
                 return Tree{exp->node_value.str, Yamg::User_Symbols::STRING, Node_type::constante};
-//            default: return Tree{}
         }
         return Tree{};
     }
@@ -41,7 +54,7 @@ struct Tree::Private{
         Tree ifTree{"IF", Yamg::User_Symbols::IF, Node_type::operacao};
         ifTree.insertChild(commandExpression(command->exp));
         ifTree.insertChild(insertCommands(command->then_com));
-        if(command->else_com != NULL) ifTree.insertChild(insertCommands(command->else_com));
+        if(command->else_com != nullptr) ifTree.insertChild(insertCommands(command->else_com));
         return ifTree;
     }
     static Tree commandWhile(msa::while_t *command){
@@ -63,11 +76,15 @@ struct Tree::Private{
         returnTree.insertChild(commandExpression(command));
         return returnTree;
     }
-    static Tree commandExpression(msa::expression *command){
-        Tree expTree{ createExpressionNode(command) };
-        if(command->left)  expTree.insertChild(commandExpression(command->left));
-        if(command->right) expTree.insertChild(commandExpression(command->right));
+    static Tree _commandExpression(msa::expression *expression){
+        Tree expTree{ createExpressionNode(expression) };
+        if(expression->left)  expTree.insertChild(commandExpression(expression->left));
+        if(expression->right) expTree.insertChild(commandExpression(expression->right));
         return expTree;
+    }
+    static Tree commandExpression(msa::expression *expression) {
+        newTempRegister(true);
+        return _commandExpression(expression);
     }
 
     static Tree insertCommands(msa::command_list *commands) {
@@ -129,8 +146,12 @@ Yamg::User_Symbols Tree::readUserSymbol(std::string type) {
     return result;
 }
 
+void Tree::setName(const std::string& name){
+    this->name = name;
+}
+
 Tree::Tree() {}
 
-Tree::Tree(const std::string name, const Yamg::User_Symbols symbol, const Node_type type)
+Tree::Tree(const std::string &name, const Yamg::User_Symbols symbol, const Node_type type)
     : YamgTree<Tree, AstSymbols::Funcao> { name, symbol, type }
     {}
