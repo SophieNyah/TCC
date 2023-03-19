@@ -22,6 +22,7 @@ int main() {
 //        Yamg::matchMinimalMunch(arvorePrograma);
 //        Yamg::matchDynamicProgramming(arvorePrograma)
 
+        RegAlloc::clearStack();
         RegAlloc::allocate();
 
         funcao.generateHeader(file);

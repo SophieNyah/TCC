@@ -59,6 +59,10 @@ namespace AstSymbols {
         return this->comandos;
     }
 
+    std::map<std::string, msa::Symbol> Funcao::getLocalTable() {
+        return this->tabelaLocal;
+    }
+
     void Funcao::generateHeader(std::ofstream& out_file) {
         if(this->nome == "main") {
             out_file << "main:\n";
@@ -110,9 +114,8 @@ namespace AstSymbols {
         }
 
         lido = true;
-        Programa programa{msa::Program_Table.Global_Symbol_Table, funcoes};
-        Programa::programa = programa;
-        return programa;
+        Programa::programa = Programa{msa::Program_Table.Global_Symbol_Table, funcoes};
+        return Programa::programa;
     }
 
     std::optional<msa::Symbol> Programa::getGlobalVar(const std::string nome) {

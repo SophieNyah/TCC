@@ -4,9 +4,11 @@
     
     bool isRegister(std::string);
     bool isTempReg(std::string);
+    bool isVariableRegister(std::string);
     bool isArgumentReg(std::string);
     void doubleRegisterInstruction(std::string instruction, std::string root, std::string reg1, std::string reg2, bool isRootWriteable=false);
     void regConstInstruction(std::string instruction, std::string root, std::string reg, std::string cnst, bool isRootWriteable=false);
+    void returnInstruction(std::string operand);
 }
 
 %alg MAXIMAL_MUNCH
@@ -97,17 +99,43 @@ _mul <- reg: MUL(reg,reg) {} = {
     std::cout << "_mul\n";
 };
 
-_equals <- reg: EQUALS(reg,reg) {} = {
+_equalsConst <- reg: EQUALS(reg,CONST) {} = {
+    std::string tempReg = newTempRegister();
+    regConstInstruction("seq", tempReg, $[1], $[2]);
+    std::cout << "_equalsConst\n";
+};
+_equalsReg <- reg: EQUALS(reg,reg) {} = {
+    std::string tempReg = newTempRegister();
+    doubleRegisterInstruction("seq", tempReg, $[1], $[2]);
     std::cout << "_equals\n";
 };
 
-_if <- stmt: IF(reg,stmt) {} = {
+_if <- stmt: IF(reg, {
+                         std::string index = std::to_string(labelIndex(true));
+                         RegAlloc::newInstruction({"beq "+$[1]+", $zero, if_end_"+index}, {});
+                     } stmt) {} = {
+    std::string index = std::to_string(labelIndex());
+    RegAlloc::newInstruction({"if_end_"+index+":"}, {});
     std::cout << "_if\n";
 };
-_ifElse <- stmt: IF(reg,stmt,stmt) {} = {
+_ifElse <- stmt: IF(reg, {
+                        std::string index = std::to_string(labelIndex(true));
+                        RegAlloc::newInstruction({"beq "+$[1]+", $zero, if_else_"+index}, {});
+                    } stmt, {
+                        std::string index = std::to_string(labelIndex());
+                        RegAlloc::newInstruction({"j if_end_"+index}, {});
+                        RegAlloc::newInstruction({"if_else_"+index+":"}, {});
+                    }stmt) {} = {
+    std::string index = std::to_string(labelIndex());
+    RegAlloc::newInstruction({"if_end_"+index+":"}, {});
     std::cout << "_ifElse\n";
 };
+_returnConst <- stmt: RETURN(CONST) {} = {
+    returnInstruction($[1]);
+    std::cout << "_returnConst\n";
+};
 _return <- stmt: RETURN(reg) {} = {
+    returnInstruction($[1]);
     std::cout << "_return\n";
 };
 _assignConst <- stmt: ASSIGN(reg,CONST) {} = {
@@ -169,19 +197,23 @@ bool isArgumentReg(std::string reg) {
     if(isRegister(reg) && (reg[1] == 'a')) return true;
     return false;
 }
+bool isVariableRegister(std::string reg) {
+    if(isRegister(reg) && reg[1] == 's') return true;
+    return false;
+}
 
 void doubleRegisterInstruction(std::string instruction, std::string root, std::string reg1, std::string reg2, bool isRootWriteable){
     std::string templ{ instruction + " " + root + ", " };
     std::vector<Instruction::OperandType> operands{};
-    if(isRegister(root)){
+    if(isVariableRegister(root)){
         operands.emplace_back(Instruction::OperandType{root, isRootWriteable});
     }
-    if(isRegister(reg1)) templ += reg1 + ", ";
+    if(!isVariableRegister(reg1)) templ += reg1 + ", ";
     else {
         templ += "%o, ";
         operands.emplace_back(Instruction::OperandType{reg1});
     }
-    if(isRegister(reg2)) templ += reg2;
+    if(!isVariableRegister(reg2)) templ += reg2;
     else {
         templ += "%o";
         operands.emplace_back(Instruction::OperandType{reg2});
@@ -192,15 +224,38 @@ void doubleRegisterInstruction(std::string instruction, std::string root, std::s
 void regConstInstruction(std::string instruction, std::string root, std::string reg, std::string cnst, bool isRootWriteable){
     std::string templ{ instruction + " " + root + ", " };
     std::vector<Instruction::OperandType> operands{};
-    if(isRegister(root)){
+    if(isVariableRegister(root)){
         operands.emplace_back(Instruction::OperandType{root, isRootWriteable});
     }
-    if(isRegister(reg)) templ += reg + ", ";
+    if(!isVariableRegister(reg)) templ += reg + ", ";
     else {
         templ += "%o, ";
         operands.emplace_back(Instruction::OperandType{reg});
     }
     templ += "%c";
     RegAlloc::newInstruction(templ, operands, {cnst});
+}
+
+void returnInstruction(std::string operand){
+    std::string mvTempl{};
+    std::vector<Instruction::OperandType> mvOperands{};
+    std::vector<std::string> mvConst{};
+    if(isRegister(operand)){
+        mvTempl = "move $v0, ";
+        if(!isVariableRegister(operand)) {
+            mvTempl += operand;
+        } else {
+            mvTempl += "%o";
+            mvOperands.emplace_back(Instruction::OperandType{operand});
+        }
+    } else {
+        mvTempl = "li $v0, %c";
+        mvConst.emplace_back(operand);
+    }
+    RegAlloc::newInstruction(mvTempl, mvOperands, mvConst);
+    RegAlloc::clearStack();
+    RegAlloc::newInstruction({"lw $ra, 0($sp)"}, {});
+    RegAlloc::newInstruction({"addi $sp, $sp, 4"}, {});
+    RegAlloc::newInstruction({"jr $ra"}, {});
 }
 }

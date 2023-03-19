@@ -35,7 +35,7 @@ class TemplateTree{
         std::string getName(){ return this->name; }
         Node_type getType(){ return this->type; }
         int getSymbol(){ return this->user_symbol; }
-        code_t getAction(){ return this->action; }
+        code_t  getAction(){ return this->action; }
         void setAction(code_t acao){ this->action = acao; }
         int size(){
             int size{ 1 };
@@ -66,7 +66,7 @@ class TemplateTree{
         template<typename Funcao, typename... Args>
         void map(Funcao f, Args... a) {
             f(this, a...);
-            for(T child: this->children) { child.map(f, a...); }
+            for(T &child: this->children) { child.map(f, a...); }
         }
 
             /* Atributos */

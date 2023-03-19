@@ -10,6 +10,7 @@
 #include "../src/AstSymbols.h"
 
 std::string newTempRegister(bool reset=false);
+int labelIndex(bool newIndex = false);
 
 class Tree: public YamgTree<Tree, AstSymbols::Funcao> {
     public:

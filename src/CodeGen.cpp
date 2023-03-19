@@ -344,46 +344,56 @@ namespace{
            "                t.matched_rules.insert(pos, s);\n"
            "            }\n"
            "        }\n"
-           "    }";
+           "    }\n\n";
     }
     void printAction(){
-        out_file_cpp << "    int action(Rules r, Tree &t){\n"
-                 << "        switch(r){\n";
+        out_file_cpp << "    int action(Rules r, Tree &t, int subrule){\n"
+                     << "        switch(r){\n";
         for( Rule r: Helper::getRules() ){
+            BasicTree &pattern = r.getPattern();
             string replace_with[2]{"t.getChildName(", ")"};
             string act = findAndReplace(r.getAction(), replace_with, "\\$\\[(\\d+)\\]");
-            r.getPattern().map(
+            pattern.map(
                     [&replace_with](TemplateTree<BasicTree> *t, auto findReplace) -> void {
                         t->setAction(findReplace(t->getAction(), replace_with, "\\$\\[(\\d+)\\]"));
-                    },
-                    findAndReplace
-            );
+                    }, findAndReplace);
             replace_with[0] = "t.getChild(";
             act = findAndReplace(act, replace_with, "\\$node\\[(\\d+)\\]");
-            r.getPattern().map(
+            pattern.map(
                 [&replace_with](TemplateTree<BasicTree> *t, auto findReplace) -> void {
                     t->setAction(findReplace(t->getAction(), replace_with, "\\$node\\[(\\d+)\\]"));
-                },
-                findAndReplace
-            );
-            replace_with[0] = "\n"; replace_with[1] = "                ";
+                }, findAndReplace);
+            replace_with[0] = "\n"; replace_with[1] = "                        ";
             act = findAndReplace(act, replace_with, "\n");
-            r.getPattern().map(
+            pattern.map(
                     [&replace_with](TemplateTree<BasicTree> *t, auto findReplace) -> void {
                         t->setAction(findReplace(t->getAction(), replace_with, "\n"));
-                    },
-                    findAndReplace
-            );
-            r.getPattern().map([](TemplateTree<BasicTree> *t, string *act)->void { act->append(t->getAction());}, &act);
+                    }, findAndReplace);
+            string subrules{};
+            int location{ 0 };
+            pattern.map([](TemplateTree<BasicTree> *t, string *subrules, int *location)->void {
+                if(t->getAction() == ""){
+                    (*location)++;
+                    return;
+                }
+                subrules->append(printTab(5) + "case " + std::to_string(*location) + ":\n" + t->getAction() + "\n" + printTab(6) + "break;\n");
+                (*location)++;
+            }, &subrules, &location);
 
             out_file_cpp << printTab(3) << "case Rules::" << r.getName() << " :\n"
-                         << printTab(4) << act << '\n';
-            out_file_cpp << printTab(4) << "break;\n";
+                         << printTab(4) << "switch(subrule) {\n"
+                         << subrules
+                         << printTab(5) << "case -1:\n"
+                         << printTab(6) << act << '\n'
+                         << printTab(6) << "break;\n"
+                         << printTab(5) << "}\n"
+                         << printTab(4) << "break;\n";
+//                         << "br"
         }
         out_file_cpp << "            default: break;\n"
-                 << "        }\n"
-                 << "        return 0;\n"
-                 << "    }\n\n";
+                     << "        }\n"
+                     << "        return 0;\n"
+                     << "    }\n\n";
     }
 
     void printCheckRule() {
@@ -428,16 +438,19 @@ namespace{
         out_file_cpp << "    };\n\n"
 
                         "    void _reduce(Tree&);\n"
-                        "    void _reduceAux(Tree& t, std::vector<RuleLimit_t>& limit, int& count){\n"
-                        "        if( count == limit.at(0).first ){\n"
+                        "    void _reduceAux(Tree& originalTree, Tree& t, std::vector<RuleLimit_t>& limit, int& count, const Rules &rule){\n"
+                        "        if( !limit.empty() && count == limit.at(0).first ){\n"
                         "            limit.erase(limit.begin());\n"
+                        "            action(rule, originalTree, count);\n"
                         "            if( count != 0 ) _reduce(t);\n"
                         "            return;\n"
+                        "        } else {\n"
+                        "            action(rule, originalTree, count);\n"
                         "        }\n\n"
-                 
+
                         "        for( Tree c: t.getChildren() ){\n"
                         "            count++;\n"
-                        "            _reduceAux(c, limit, count);\n"
+                        "            _reduceAux(originalTree, c, limit, count, rule);\n"
                         "            if( limit.empty() ) break;\n"
                         "        }\n"
                         "    }\n\n"
@@ -452,8 +465,8 @@ namespace{
                         "            limit = RulesLimitsMap.at(r);\n"
                         "        }\n"
                         "        int count{ 0 };\n"
-                        "        _reduceAux(t, limit, count);\n"
-                        "        action(r, t);\n"
+                        "        _reduceAux(t, t, limit, count, r);\n"
+                        "        action(r, t, -1);\n"
                         "    }\n\n";
     }
     void printGenerateCode(){

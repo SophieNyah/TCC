@@ -69,6 +69,8 @@ map<string, RegAlloc::variable> RegAlloc::variables{};
 vector<Instruction> RegAlloc::instructions{};
 vector<string>      RegAlloc::registers{};
 vector<string>      RegAlloc::spill_registers{};
+constexpr size_t sizeOfVariable = 4;
+const std::string clearStackValue = "clear stack";
 
     //*** Funções privadas ***
 struct RegAlloc::Private {
@@ -80,6 +82,11 @@ struct RegAlloc::Private {
      * Manipulação de memória
      */
 
+    static void resetStack(const vector<Instruction>::iterator &iterator, const vector<variable> &memory) {
+        size_t stack_size{ memory.size() };
+        iterator.base()->template_instruction = "addi $sp, $sp, "+ to_string(stack_size * sizeOfVariable);
+    }
+
     static optional<int> findPositionInMemory(vector<variable> &memory, string var_name) {
         auto it = std::find_if(memory.begin(), memory.end(), [var_name](variable var)->bool { return var_name == var.name; });
         if(it == memory.end()) {
@@ -88,7 +95,8 @@ struct RegAlloc::Private {
             return it - memory.begin();
         }
     }
-    static void storeInMemory(vector<variable> &memory, variable var) {
+    static void storeInMemory(vector<Instruction>::iterator &it, vector<variable> &memory, variable var) {
+        RegAlloc::instructions.emplace(it, Instruction{"subi $sp, $sp, 4", {}});
         memory.emplace_back(var);
     }
 
@@ -102,7 +110,7 @@ struct RegAlloc::Private {
         if(!read_variable_position.has_value()) return nullopt;
         Instruction new_i = RegAlloc::read_instruction.value();
         new_i.registers.emplace_back(reg_name);
-        new_i.registers.emplace_back(std::to_string(read_variable_position.value()*4));
+        new_i.registers.emplace_back(std::to_string(read_variable_position.value()*sizeOfVariable));
         return instructions.insert(i, new_i) + 1;
     }
     static optional<vector<Instruction>::iterator> emitWrite(vector<Instruction> &instructions, vector<Instruction>::iterator &i, vector<variable> &memory, Instruction::OperandType &var, string &reg_name) {
@@ -112,7 +120,7 @@ struct RegAlloc::Private {
         if(!write_variable_position.has_value()) return nullopt;
         Instruction new_i = RegAlloc::write_instruction.value();
         new_i.registers.emplace_back(reg_name);
-        new_i.registers.emplace_back(std::to_string(write_variable_position.value()*4));
+        new_i.registers.emplace_back(std::to_string(write_variable_position.value()*sizeOfVariable));
         return instructions.insert(i+1, new_i) + 1;
     }
 
@@ -122,6 +130,10 @@ struct RegAlloc::Private {
 
         for(auto instruction_it = RegAlloc::instructions.begin(); instruction_it!=RegAlloc::instructions.end(); instruction_it++) {
             Instruction &instruction = *instruction_it.base();
+            if(instruction.template_instruction == clearStackValue) {
+                resetStack(instruction_it, memory);
+                continue;
+            }
             vector<Instruction::OperandType> vars_in_memory{};
             int in_memory{ 0 };
 
@@ -209,12 +221,13 @@ struct RegAlloc::Private {
 
     static void spill(vector<name_variable> &actives, vector<variable> &memory_registers, variable &var) {
         name_variable spilled{ actives.back() };
+        vector<Instruction>::iterator curr_instruction = RegAlloc::instructions.begin() + var.range.birth - 1;
         if(spilled.second.range.death > var.range.death) {
-            storeInMemory(memory_registers, spilled.second);
+            storeInMemory(curr_instruction, memory_registers, spilled.second);
             actives.pop_back();
             insertActives(actives, std::make_pair(spilled.first, var));
         } else {
-            storeInMemory(memory_registers, var);
+            storeInMemory(curr_instruction, memory_registers, var);
         }
     }
 
@@ -258,6 +271,14 @@ struct RegAlloc::Private {
     //*** Membros públicos ***
 void RegAlloc::allocate() {
     if(RegAlloc::instructions.empty()) return;
+    bool no_operands{true};
+    for(const Instruction &i: RegAlloc::instructions){
+        if(!i.operands.empty()){
+            no_operands = false;
+            break;
+        }
+    }
+    if(no_operands) return;
     RegAlloc::Private::liveRangeAnalysis();
     RegAlloc::Private::linearScan();
 }
@@ -287,5 +308,7 @@ void RegAlloc::newInstruction(Instruction i) { RegAlloc::instructions.push_back(
 void RegAlloc::newInstruction(string template_string, vector<Instruction::OperandType> operands, vector<string> constants) {
     RegAlloc::instructions.push_back(Instruction{template_string, operands, constants});
 }
+
+void RegAlloc::clearStack() { RegAlloc::newInstruction(clearStackValue, {}); }
 
 void RegAlloc::clearInstructions() { RegAlloc::instructions.clear(); }

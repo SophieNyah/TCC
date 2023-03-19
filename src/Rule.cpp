@@ -29,7 +29,7 @@ Rule::Rule(string name, vector<Pattern> patterns, BasicTree root, string user_sy
 int    Rule::getRuleNumber(){ return this->rule_no; }
 string Rule::getName()      { return this->name; }
 string Rule::getSymbol()    { return this->user_symbol; }
-BasicTree Rule::getPattern(){ return this->tree_pattern; }
+BasicTree& Rule::getPattern(){ return this->tree_pattern; }
 code_t Rule::getCost()      { return this->cost; }
 code_t Rule::getAction()    { return this->action; }
 void Rule::setAction(code_t action){ this->action = action; }

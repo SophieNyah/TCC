@@ -38,6 +38,7 @@ namespace AstSymbols {
             const msa::Var_type getRetorno();
             const msa::function_prototype getPrototipo();
             const msa::command_list getComandos();
+            std::map<std::string, msa::Symbol> getLocalTable();
 
             void generateHeader(std::ofstream& out_file);
             void generateFooter(std::ofstream& out_file);

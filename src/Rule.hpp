@@ -44,7 +44,7 @@ class Rule {
         code_t getCost();
         void   setAction(code_t);
         code_t getAction();
-        BasicTree getPattern();
+        BasicTree &getPattern();
 
 };
 

@@ -1,7 +1,7 @@
 FLEX=flex
 BISON=bison
 CC=g++
-FLAGS=-std=c++17
+FLAGS=-std=c++17 -g
 
 PROGRAMA = generator
 
