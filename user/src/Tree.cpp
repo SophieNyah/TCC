@@ -47,12 +47,24 @@ struct Tree::Private{
             case msa::yytokentype::EQUALS:        return Tree{newTempRegister(), Yamg::User_Symbols::EQUALS, Node_type::operacao};
             case msa::yytokentype::ASSIGN:        return Tree{"ASSIGN", Yamg::User_Symbols::ASSIGN, Node_type::operacao};
 
-            case msa::yytokentype::FUNCTION_CALL: return Tree{exp->node_value.sym->id, Yamg::User_Symbols::FUNCTION_CALL, Node_type::operacao};
+            case msa::yytokentype::FUNCTION_CALL: {
+                Tree functionTree{exp->node_value.sym->id, Yamg::User_Symbols::FUNCTION_CALL, Node_type::operacao};
+                msa::expression *root = exp->left;
+                int currArg{ 0 };
+                if(root){
+                    for(; root->node_type != msa::yytokentype::COMMA_SEPARATOR; root = root->right ) {
+                        functionTree.insertChild(Tree{"$a"+std::to_string(currArg), Yamg::User_Symbols::VARIABLE, Node_type::registrador});
+                        currArg++;
+                    }
+                    functionTree.insertChild(Tree{"$a"+std::to_string(currArg), Yamg::User_Symbols::VARIABLE, Node_type::registrador});
+                }
+                return functionTree;
+            }
             case msa::yytokentype::IDENTIFIER: {
                 try {
                     std::string parameter = parameterVariables.at(exp->node_value.sym->id);
                     return Tree{parameter, Yamg::User_Symbols::VARIABLE, Node_type::registrador};
-                } catch(std::out_of_range) {
+                } catch(std::out_of_range const&) {
                     return Tree{exp->node_value.sym->id, Yamg::User_Symbols::VARIABLE, Node_type::registrador};
                 }
             }

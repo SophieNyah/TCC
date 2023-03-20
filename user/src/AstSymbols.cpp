@@ -106,7 +106,7 @@ namespace AstSymbols {
             auto func = aux->function;
             std::string funcName{func.name};
             Funcao funcao{funcName, func.Local_Symbol_Table, func.return_type, func.f, *func.commands_head};
-            if(funcName == "main"){
+            if(funcName == "main") {
                 funcoes.insert(funcoes.begin(), funcao);
             } else {
                 funcoes.emplace_back(funcao);

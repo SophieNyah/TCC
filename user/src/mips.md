@@ -9,6 +9,7 @@
     void doubleRegisterInstruction(std::string instruction, std::string root, std::string reg1, std::string reg2, bool isRootWriteable=false);
     void regConstInstruction(std::string instruction, std::string root, std::string reg, std::string cnst, bool isRootWriteable=false);
     void returnInstruction(std::string operand);
+    void functionInstruction(std::string function, std::string var1="", std::string var2="", std::string var3="", std::string var4="");
 }
 
 %alg MAXIMAL_MUNCH
@@ -153,8 +154,25 @@ _assign <- stmt: ASSIGN(reg,reg) {} = {
     RegAlloc::newInstruction(templ, operands);
     std::cout << "_assign\n";
 };
-_function <- reg: FUNCTION_CALL {} = {
-    std::cout << "_functionCall\n";
+_function0 <- reg: FUNCTION_CALL {} = {
+    functionInstruction($[0]);
+    std::cout << "_functionCall0\n";
+};
+_function1 <- reg: FUNCTION_CALL(reg) {} = {
+    functionInstruction($[0], $[1]);
+    std::cout << "_functionCall1\n";
+};
+_function2 <- reg: FUNCTION_CALL(reg,reg) {} = {
+    functionInstruction($[0], $[1], $[2]);
+    std::cout << "_functionCall2\n";
+};
+_function3 <- reg: FUNCTION_CALL(reg,reg,reg) {} = {
+    functionInstruction($[0], $[1], $[2], $[3]);
+    std::cout << "_functionCall3\n";
+};
+_function4 <- reg: FUNCTION_CALL(reg,reg,reg,reg) {} = {
+    functionInstruction($[0], $[1], $[2], $[3], $[4]);
+    std::cout << "_functionCall4\n";
 };
 
 _command <- stmt: COMMAND(stmt,stmt) {} = {
@@ -258,4 +276,57 @@ void returnInstruction(std::string operand){
     RegAlloc::newInstruction({"addi $sp, $sp, 4"}, {});
     RegAlloc::newInstruction({"jr $ra"}, {});
 }
+
+void functionInstruction(std::string function, std::string var1, std::string var2, std::string var3, std::string var4){
+    RegAlloc::newInstruction({"subi $sp, $sp, 48"}, {});
+    for(int i=0; i<8; i++) {
+        std::string store{"sw $s" + std::to_string(i) + ", " + std::to_string(i*4) + "($sp)"};
+        RegAlloc::newInstruction(store, {});
+    }
+    for(int i=0; i<4; i++) {
+        std::string store{"sw $a" + std::to_string(i) + ", " + std::to_string(32 + i*4) + "($sp)"};
+        RegAlloc::newInstruction(store, {});
+    }
+
+    if(!var1.empty()) {
+        if(!isVariableRegister(var1)) {
+            RegAlloc::newInstruction({"move $a0, "+var1}, {});
+        } else {
+            RegAlloc::newInstruction({"move $a0, %o"}, { {var1} });
+        }
+    }
+    if(!var2.empty()) {
+        if(!isVariableRegister(var2)) {
+            RegAlloc::newInstruction({"move $a1, "+var2}, {});
+        } else {
+            RegAlloc::newInstruction({"move $a1, %o"}, { {var2} });
+        }
+    }
+    if(!var3.empty()) {
+        if(!isVariableRegister(var3)) {
+            RegAlloc::newInstruction({"move $a2, "+var3}, {});
+        } else {
+            RegAlloc::newInstruction({"move $a2, %o"}, { {var3} });
+        }
+    }
+    if(!var4.empty()) {
+        if(!isVariableRegister(var4)) {
+            RegAlloc::newInstruction({"move $a3, "+var4}, {});
+        } else {
+            RegAlloc::newInstruction({"move $a3, %o"}, { {var4} });
+        }
+    }
+
+    RegAlloc::newInstruction({"j " + function}, {});
+    
+     for(int i=7; i>=0; i--) {
+        std::string store{"lw $s" + std::to_string(i) + ", " + std::to_string(i*4) + "($sp)"};
+        RegAlloc::newInstruction(store, {});
+    }
+    for(int i=3; i>=0; i--) {
+        std::string store{"lw $a" + std::to_string(i) + ", " + std::to_string(32 + i*4) + "($sp)"};
+        RegAlloc::newInstruction(store, {});
+    }   
+}
+
 }

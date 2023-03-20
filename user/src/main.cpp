@@ -8,8 +8,12 @@
 #include "./lib/yamg/RegAlloc.hpp"
 
 int main() {
-    AstSymbols::Programa programa = AstSymbols::Programa::leArquivoC();
+    msa::setup(stdin);
+    msa::yyparse();
+    auto programa = msa::Program_Table;
 
+//    AstSymbols::Programa programa = AstSymbols::Programa::leArquivoC();
+/*
     std::ofstream file{"../output/out.md", std::ios::out | std::ios::trunc};
     programa.generateProgramHeader(file);
 
@@ -22,7 +26,7 @@ int main() {
 //        Yamg::matchMinimalMunch(arvorePrograma);
 //        Yamg::matchDynamicProgramming(arvorePrograma)
 
-        RegAlloc::clearStack();
+        if(funcao.getNome() != "main") RegAlloc::clearStack();
         RegAlloc::allocate();
 
         funcao.generateHeader(file);

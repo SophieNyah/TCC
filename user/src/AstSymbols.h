@@ -48,8 +48,8 @@ namespace AstSymbols {
     class Programa {
         Programa(msa::HashTable, std::vector<Funcao>);
 
-        std::vector<Funcao> funcoes;
         std::map<std::string, msa::Symbol> variaveis_globais;
+        std::vector<Funcao> funcoes;
 
         static Programa programa;
         static std::map<std::string, std::string> string_literals;
