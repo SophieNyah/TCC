@@ -70,7 +70,9 @@ vector<Instruction> RegAlloc::instructions{};
 vector<string>      RegAlloc::registers{};
 vector<string>      RegAlloc::spill_registers{};
 constexpr size_t sizeOfVariable = 4;
-const std::string clearStackValue = "clear stack";
+const std::string clearStackValue    = "# clear stack";
+const std::string storeStackValue    = "# store stack";
+const std::string retrieveStackValue = "# retrieve stack";
 
     //*** Funções privadas ***
 struct RegAlloc::Private {
@@ -82,9 +84,46 @@ struct RegAlloc::Private {
      * Manipulação de memória
      */
 
-    static void resetStack(const vector<Instruction>::iterator &iterator, const vector<variable> &memory) {
+    static vector<Instruction>::iterator _clearStack(const vector<Instruction>::iterator &iterator, const vector<variable> &memory) {
+        if(memory.empty()) {
+//            iterator = RegAlloc::instructions.erase(iterator);
+            return iterator;
+        }
         size_t stack_size{ memory.size() };
-        iterator.base()->template_instruction = "addi $sp, $sp, "+ to_string(stack_size * sizeOfVariable);
+        iterator.base()->template_instruction = "addi $sp, $sp, " + to_string(stack_size * sizeOfVariable) + "  #clear stack";
+        return iterator;
+    }
+    static vector<Instruction>::iterator _storeStack(vector<Instruction>& instructions, vector<Instruction>::iterator& iterator, vector<vector<name_variable>>::iterator& actives_it) {
+        vector<name_variable> actives_array{ *actives_it.base() };
+        if(actives_array.empty()) {
+//            iterator = instructions.erase(iterator);
+            return iterator;
+        }
+        size_t used_registers{ actives_array.size() };
+        iterator.base()->template_instruction = "subi $sp, $sp, " + to_string(used_registers * sizeOfVariable) + "  #store stack";
+        for(int i=0; i<used_registers; i++){
+            Instruction instruction{ {"sw " + actives_array[i].first + ", " + to_string(i * sizeOfVariable) + "($sp)  #store stack"}, {} };
+            iterator = instructions.insert(iterator+1, instruction);
+        }
+        return iterator;
+    }
+    static vector<Instruction>::iterator _retrieveStack(vector<Instruction>& instructions, vector<Instruction>::iterator& iterator, vector<vector<name_variable>>::iterator& actives_it) {
+        vector<name_variable> actives_array{ *actives_it.base() };
+        if(actives_array.empty()) {
+//            iterator = instructions.erase(iterator);
+            return iterator;
+        }
+        size_t used_registers{ actives_array.size() };
+        for(int i=used_registers - 1; i>=0; i--){
+            std::string template_instruction{"lw " + actives_array[i].first + ", " + to_string(i * sizeOfVariable) + "($sp)  #retrieve stack"};
+            if(i == used_registers-1) {
+                iterator.base()->template_instruction = template_instruction;
+            } else {
+                iterator = instructions.insert(iterator + 1, Instruction{ template_instruction, {} });
+            }
+        }
+        instructions.insert(iterator+1, { {"addi $sp, $sp, " + to_string(used_registers * sizeOfVariable) + "  #retrieve stack"}, {} });
+        return iterator;
     }
 
     static optional<int> findPositionInMemory(vector<variable> &memory, string var_name) {
@@ -131,9 +170,17 @@ struct RegAlloc::Private {
         for(auto instruction_it = RegAlloc::instructions.begin(); instruction_it!=RegAlloc::instructions.end(); instruction_it++) {
             Instruction &instruction = *instruction_it.base();
             if(instruction.template_instruction == clearStackValue) {
-                resetStack(instruction_it, memory);
+                instruction_it = _clearStack(instruction_it, memory);
+                if(instruction_it == RegAlloc::instructions.end()) break;
+                continue;
+            } else if(instruction.template_instruction == storeStackValue) {
+                instruction_it = _storeStack(RegAlloc::instructions, instruction_it, actives_iterator);
+                continue;
+            } else if(instruction.template_instruction == retrieveStackValue) {
+                instruction_it = _retrieveStack(RegAlloc::instructions, instruction_it, actives_iterator);
                 continue;
             }
+
             vector<Instruction::OperandType> vars_in_memory{};
             int in_memory{ 0 };
 
@@ -309,6 +356,8 @@ void RegAlloc::newInstruction(string template_string, vector<Instruction::Operan
     RegAlloc::instructions.push_back(Instruction{template_string, operands, constants});
 }
 
-void RegAlloc::clearStack() { RegAlloc::newInstruction(clearStackValue, {}); }
+void RegAlloc::storeStack()    { RegAlloc::newInstruction(storeStackValue, {}); }
+void RegAlloc::retrieveStack() { RegAlloc::newInstruction(retrieveStackValue, {}); }
+void RegAlloc::clearStack()    { RegAlloc::newInstruction(clearStackValue, {}); }
 
 void RegAlloc::clearInstructions() { RegAlloc::instructions.clear(); }

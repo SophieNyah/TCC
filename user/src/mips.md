@@ -2,6 +2,7 @@
     #include"../src/Tree.h"
     #include<iostream>
     
+    bool isLiteral(std::string);
     bool isRegister(std::string);
     bool isTempReg(std::string);
     bool isVariableRegister(std::string);
@@ -154,24 +155,29 @@ _assign <- stmt: ASSIGN(reg,reg) {} = {
     RegAlloc::newInstruction(templ, operands);
     std::cout << "_assign\n";
 };
-_function0 <- reg: FUNCTION_CALL {} = {
+_functionZero <- reg: FUNCTION_CALL {} = {
     functionInstruction($[0]);
+    $node[0].setName("$v0");
     std::cout << "_functionCall0\n";
 };
-_function1 <- reg: FUNCTION_CALL(reg) {} = {
+_functionOne <- reg: FUNCTION_CALL(reg) {} = {
     functionInstruction($[0], $[1]);
+    $node[0].setName("$v0");
     std::cout << "_functionCall1\n";
 };
-_function2 <- reg: FUNCTION_CALL(reg,reg) {} = {
+_functionTwo <- reg: FUNCTION_CALL(reg,reg) {} = {
     functionInstruction($[0], $[1], $[2]);
+    $node[0].setName("$v0");
     std::cout << "_functionCall2\n";
 };
-_function3 <- reg: FUNCTION_CALL(reg,reg,reg) {} = {
+_functionThree <- reg: FUNCTION_CALL(reg,reg,reg) {} = {
     functionInstruction($[0], $[1], $[2], $[3]);
+    $node[0].setName("$v0");
     std::cout << "_functionCall3\n";
 };
-_function4 <- reg: FUNCTION_CALL(reg,reg,reg,reg) {} = {
+_functionFour <- reg: FUNCTION_CALL(reg,reg,reg,reg) {} = {
     functionInstruction($[0], $[1], $[2], $[3], $[4]);
+    $node[0].setName("$v0");
     std::cout << "_functionCall4\n";
 };
 
@@ -203,22 +209,12 @@ _lastCommand <- stmt: COMMAND(stmt) {} = {
 %%
 
 {
-bool isRegister(std::string reg){
-    if(reg[0] == '$') return true;
-    return false;
-}
-bool isTempReg(std::string reg) {
-    if(isRegister(reg) && (reg[1] == 't')) return true;
-    return false;
-}
-bool isArgumentReg(std::string reg) {
-    if(isRegister(reg) && (reg[1] == 'a')) return true;
-    return false;
-}
-bool isVariableRegister(std::string reg) {
-    if(isRegister(reg) && reg[1] == 's') return true;
-    return false;
-}
+bool isNumber(std::string reg)           { return (std::isdigit(reg[0])); }
+bool isTempReg(std::string reg)          { return (isRegister(reg) && (reg[1] == 't')); }
+bool isRegister(std::string reg)         { return (reg[0] == '$'); }
+bool isLiteral(std::string reg)         { return (reg[0] == '\"' || reg[0] == '\'' || std::isdigit(reg[0])); }
+bool isArgumentReg(std::string reg)      { return (isRegister(reg) && (reg[1] == 'a')); }
+bool isVariableRegister(std::string reg) { return (isRegister(reg) && reg[1] == 's'); }
 
 void doubleRegisterInstruction(std::string instruction, std::string root, std::string reg1, std::string reg2, bool isRootWriteable){
     std::string templ{ instruction + " " + root + ", " };
@@ -278,55 +274,38 @@ void returnInstruction(std::string operand){
 }
 
 void functionInstruction(std::string function, std::string var1, std::string var2, std::string var3, std::string var4){
-    RegAlloc::newInstruction({"subi $sp, $sp, 48"}, {});
-    for(int i=0; i<8; i++) {
-        std::string store{"sw $s" + std::to_string(i) + ", " + std::to_string(i*4) + "($sp)"};
-        RegAlloc::newInstruction(store, {});
-    }
-    for(int i=0; i<4; i++) {
-        std::string store{"sw $a" + std::to_string(i) + ", " + std::to_string(32 + i*4) + "($sp)"};
-        RegAlloc::newInstruction(store, {});
-    }
+    std::vector<std::string> vars{};
+    if(!var1.empty()) vars.emplace_back(var1);
+    if(!var2.empty()) vars.emplace_back(var2);
+    if(!var3.empty()) vars.emplace_back(var3);
+    if(!var4.empty()) vars.emplace_back(var4);
 
-    if(!var1.empty()) {
-        if(!isVariableRegister(var1)) {
-            RegAlloc::newInstruction({"move $a0, "+var1}, {});
+    RegAlloc::storeStack();
+
+    RegAlloc::newInstruction({"subi $sp, $sp, " + std::to_string(vars.size() * 4)}, {});
+    for(int i=0; i<vars.size(); i++) {
+        std::string store{"sw $a" + std::to_string(i) + ", " + std::to_string(i*4) + "($sp)"};
+        RegAlloc::newInstruction(store, {});
+        if(isLiteral(vars[i])) {
+            if(isNumber(vars[i])) {
+                RegAlloc::newInstruction({"li $a" + std::to_string(i) + ", %c"}, {}, { vars[i] });
+            } else {
+                throw std::runtime_error(std::to_string(i) + "º argumento da função \"" + function + "\" não é um inteiro nem uma variável");
+                // RegAlloc::newInstruction({"move $a"+std::to_string(i)+", " + vars[i]}, {});
+            }
         } else {
-            RegAlloc::newInstruction({"move $a0, %o"}, { {var1} });
-        }
-    }
-    if(!var2.empty()) {
-        if(!isVariableRegister(var2)) {
-            RegAlloc::newInstruction({"move $a1, "+var2}, {});
-        } else {
-            RegAlloc::newInstruction({"move $a1, %o"}, { {var2} });
-        }
-    }
-    if(!var3.empty()) {
-        if(!isVariableRegister(var3)) {
-            RegAlloc::newInstruction({"move $a2, "+var3}, {});
-        } else {
-            RegAlloc::newInstruction({"move $a2, %o"}, { {var3} });
-        }
-    }
-    if(!var4.empty()) {
-        if(!isVariableRegister(var4)) {
-            RegAlloc::newInstruction({"move $a3, "+var4}, {});
-        } else {
-            RegAlloc::newInstruction({"move $a3, %o"}, { {var4} });
+            RegAlloc::newInstruction({"move $a"+std::to_string(i)+", %o"}, { {vars[i] } });
         }
     }
 
     RegAlloc::newInstruction({"j " + function}, {});
-    
-     for(int i=7; i>=0; i--) {
-        std::string store{"lw $s" + std::to_string(i) + ", " + std::to_string(i*4) + "($sp)"};
+
+    for(int i=vars.size()-1; i>=0; i--) {
+        std::string store{"lw $a" + std::to_string(i) + ", " + std::to_string(i*4) + "($sp)"};
         RegAlloc::newInstruction(store, {});
     }
-    for(int i=3; i>=0; i--) {
-        std::string store{"lw $a" + std::to_string(i) + ", " + std::to_string(32 + i*4) + "($sp)"};
-        RegAlloc::newInstruction(store, {});
-    }   
+    RegAlloc::newInstruction({"addi $sp, $sp, " + std::to_string(vars.size()*4)}, {});
+    RegAlloc::retrieveStack();
 }
 
 }

@@ -3,7 +3,8 @@
 //
 
 int fat(int n) {
-    int n1=n-1;
+    int n1;
+    n1 = n - 1;
 
     if(n == 1) {
         return 1;

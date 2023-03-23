@@ -448,7 +448,7 @@ namespace{
                         "            action(rule, originalTree, count);\n"
                         "        }\n\n"
 
-                        "        for( Tree c: t.getChildren() ){\n"
+                        "        for( Tree &c: t.getChildren() ){\n"
                         "            count++;\n"
                         "            _reduceAux(originalTree, c, limit, count, rule);\n"
                         "            if( limit.empty() ) break;\n"

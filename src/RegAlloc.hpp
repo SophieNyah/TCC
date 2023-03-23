@@ -76,8 +76,11 @@ class RegAlloc {
         static const std::optional<Instruction> _getWriteInstruction();
 
         static void allocate();
-        static void clearStack();
         static void printCode(std::ofstream &out_file, bool use_registers=true);
+
+        static void storeStack();
+        static void retrieveStack();
+        static void clearStack();
         static void newInstruction(Instruction);
         static void newInstruction(std::string template_instruction, std::vector<Instruction::OperandType> operands, std::vector<std::string> constants={});
 

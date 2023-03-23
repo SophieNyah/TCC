@@ -6,7 +6,6 @@ set(CMAKE_CXX_FLAGS "-Wall")
 project(UserProject)
 
 link_directories(${CMAKE_SOURCE_DIR}/src/lib/msa)
-#link_directories("/home/sophie/Área de Trabalho/Importantes/TCC/Compiladores/2_semestre/Analisador_Semantico_C")
 link_directories(${CMAKE_SOURCE_DIR}/src/lib/yamg)
 
 #add_subdirectory(src/lib)
