@@ -6,6 +6,7 @@
 #include<limits>
 #include<optional>
 #include<type_traits>
+#include <map>
 #include"types.hpp"
 
 template<typename T>
@@ -37,6 +38,8 @@ class TemplateTree{
         int getSymbol(){ return this->user_symbol; }
         code_t  getAction(){ return this->action; }
         void setAction(code_t acao){ this->action = acao; }
+        void setName(const std::string& name){ this->name = name; }
+        void setSymbol(const Yamg::User_Symbols symbol){ this->user_symbol = (int)symbol; }
         int size(){
             int size{ 1 };
             for(T child: this->children){
@@ -113,50 +116,21 @@ class YamgTree: public TemplateTree<TreeType>{
 
     private:
 
-        int& _getChildCost(int& child){
-            if(child == 0) return this->matched_rules.at(0).second;
+        int& _getChildCost(int& child);
 
-            for( TreeType& c: this->getChildren() ){
-                child--;
-                int& value = c._getChildCost(child);
-                if(child==0) return value;
-            }
-            return this->matched_rules.at(0).second; // linha para o compilador não reclamar
-        }
+        std::pair<int&, std::string> _getChildName(int& child, int& goal_child, std::vector<Yamg::RuleLimit_t> &limit);
+        std::pair<int&, std::string> _getChildName(int& child, int& goal_child);
 
-        std::pair<int&, std::string> _getChildName(int& child){
-            if(child == 0){
-                std::pair<int&, std::string> par{ child, this->getName() };
-                return par;
-            }
+        TreeType* _getChild(int& child, int& goal_child, std::vector<Yamg::RuleLimit_t> &limit);
+        TreeType* _getChild(int& child);
+        std::pair<int&, std::string> _getChildName(int& child);
 
-            for(TreeType& c: this->getChildren()){
-                child--;
-                std::pair<int&, std::string> value = c._getChildName(child);
-                if(child == 0) return value;
-            }
-            std::pair<int&, std::string> par{ child, this->getName() };
-            return par;
-        }
-
-        TreeType* _getChild(int& child) {
-            if(child == 0) return dynamic_cast<TreeType*>(this);
-            for(TreeType &c: this->getChildren()) {
-                child--;
-                TreeType *t = c._getChild(child);
-                if(child == 0) return t;
-            }
-            return dynamic_cast<TreeType*>(this);
-        }
-        TreeType* _getImmediateChild(int &child) {
-            if(child == 0) return dynamic_cast<TreeType*>(this);
-            return &this->children.at(child-1);
-        }
+        TreeType* _getImmediateChild(int &child);
 
     protected:
 
         YamgTree(){}
-        YamgTree(const std::string& name, const Yamg::User_Symbols non_term, const Node_type& type)
+        YamgTree(const std::string& name, const Yamg:: User_Symbols non_term, const Node_type& type)
             : TemplateTree<TreeType>{ name, non_term, type }
             {}
 
@@ -190,21 +164,17 @@ class YamgTree: public TemplateTree<TreeType>{
 
         MyArray<int> getNonTerms() { return this->non_terminal; }
 
-        int& getChildCost(int child){
-            return this->_getChildCost(child);
-        }
+        int& getChildCost(int child);
 
-        std::string getChildName(int child){
-            return this->_getChildName(child).second;
-        }
+        std::string getChildName(int child, std::vector<Yamg::RuleLimit_t> limit);
+        std::string getChildName(int child);
 
-        TreeType& getChild(int index) {
-            return *(this->_getChild(index));
-        }
+        TreeType& getChild(int index, std::vector<Yamg::RuleLimit_t> limit);
+        TreeType& getChild(int index);
 
-        TreeType& getImmediateChild(int index) {
-            return *(this->_getImmediateChild(index));
-        }
+        TreeType& getImmediateChild(int index);
 };
+
+#include"Tree.tpp"
 
 #endif

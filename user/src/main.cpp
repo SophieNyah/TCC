@@ -7,14 +7,40 @@
 #include "Tree.h"
 #include "./lib/yamg/RegAlloc.hpp"
 
-int main() {
+int main(int argc, char* argv[]) {
+    std::string out_file_name{ "fatorial" };
+    if(argc > 1) {
+        out_file_name = argv[1];
+    }
     AstSymbols::Programa programa = AstSymbols::Programa::leArquivoC();
 
-    std::ofstream file{"../output/out.md", std::ios::out | std::ios::trunc};
+    std::ofstream file{"../output/" + out_file_name + ".asm", std::ios::out | std::ios::trunc};
+    std::ofstream logging{"../output/" + out_file_name + ".log", std::ios::out | std::ios::trunc};
+    Logger::setLoggerStream(logging);
+
+    std::vector<std::pair<AstSymbols::Funcao, Tree>> funcoesArvore{};
+    for (AstSymbols::Funcao f: programa.getFuncoes()) {
+        Tree arvore{};
+        arvore.readTree(f);
+        funcoesArvore.emplace_back(f, arvore);
+    }
     programa.generateProgramHeader(file);
 
+    for (std::pair<AstSymbols::Funcao, Tree> funcaoArvore: funcoesArvore) {
+        Logger::Log(funcaoArvore.first.getNome() + ":");
+        funcaoArvore.first.generateHeader(file);
+        Yamg::matchMaximalMunch(funcaoArvore.second);
+
+        RegAlloc::allocate();
+
+        RegAlloc::printCode(file);
+
+        RegAlloc::clearInstructions();
+        Logger::Log("");
+    }
+
+    /*
     for(AstSymbols::Funcao funcao: programa.getFuncoes()){
-//        if(funcao.getNome() != "main") continue;
         Tree arvorePrograma{};
         arvorePrograma.readTree(funcao);
 
@@ -27,7 +53,7 @@ int main() {
 
         funcao.generateHeader(file);
         RegAlloc::printCode(file);
-        if(funcao.getNome() == "main") funcao.generateFooter(file);
+//        if(funcao.getNome() == "main") funcao.generateFooter(file);
 
         RegAlloc::clearInstructions();
     }

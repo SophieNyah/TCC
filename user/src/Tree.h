@@ -19,12 +19,19 @@ class Tree: public YamgTree<Tree, AstSymbols::Funcao> {
         Node_type readNodeType(std::string) override;
         Yamg::User_Symbols readUserSymbol(std::string) override;
 
-        void setName(const std::string&);
-
     private:
         Tree(const std::string &name, const Yamg::User_Symbols, const Node_type);
         struct Private;
+};
 
+class Logger {
+    public:
+        Logger() = delete;
+        static void setLoggerStream(std::ofstream&);
+        static void Log(const std::string& message, const std::string& expression="");
+
+    private:
+        static std::ofstream logger_file;
 };
 
 

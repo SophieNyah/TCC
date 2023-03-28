@@ -22,6 +22,8 @@ struct Cost_expression{
 namespace Yamg {
     enum class User_Symbols : int;
     enum class Rules : int;
+    using RuleLimit_t = std::pair<int, User_Symbols>;
+    extern const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap;
 }
 
 using cost_t = int;

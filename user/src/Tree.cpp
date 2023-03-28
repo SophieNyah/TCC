@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <cstring>
 #include "Tree.h"
 #include "AstSymbols.h"
 #include "../output/mips.hpp"
@@ -44,8 +45,13 @@ struct Tree::Private{
             case msa::yytokentype::SUB:           return Tree{newTempRegister(), Yamg::User_Symbols::SUB, Node_type::operacao};
             case msa::yytokentype::MUL:           return Tree{newTempRegister(), Yamg::User_Symbols::MUL, Node_type::operacao};
 
-            case msa::yytokentype::EQUALS:        return Tree{newTempRegister(), Yamg::User_Symbols::EQUALS, Node_type::operacao};
+            case msa::yytokentype::INC:           return Tree{newTempRegister(), Yamg::User_Symbols::INC, Node_type::operacao};
+            case msa::yytokentype::SUBSCRIPT:     return Tree{newTempRegister(), Yamg::User_Symbols::SUBSCRIPT, Node_type::operacao};
+
             case msa::yytokentype::ASSIGN:        return Tree{"ASSIGN", Yamg::User_Symbols::ASSIGN, Node_type::operacao};
+            case msa::yytokentype::EQUALS:        return Tree{newTempRegister(), Yamg::User_Symbols::EQUALS, Node_type::operacao};
+            case msa::yytokentype::LESS:          return Tree{newTempRegister(), Yamg::User_Symbols::LESS, Node_type::operacao};
+            case msa::yytokentype::LEQ:           return Tree{newTempRegister(), Yamg::User_Symbols::LEQ, Node_type::operacao};
 
             case msa::yytokentype::FUNCTION_CALL: {
                 Tree functionTree{exp->node_value.sym->id, Yamg::User_Symbols::FUNCTION_CALL, Node_type::operacao};
@@ -87,32 +93,53 @@ struct Tree::Private{
         return Tree{};
     }
 
-    static Tree commandIf(msa::if_else_t *command, const variablesMap &parameterVariables){
+    static Tree commandIf(msa::if_else_t *if_t, const variablesMap &parameterVariables){
         Tree ifTree{"IF", Yamg::User_Symbols::IF, Node_type::operacao};
-        ifTree.insertChild(commandExpression(command->exp, parameterVariables));
-        ifTree.insertChild(insertCommands(command->then_com, parameterVariables));
-        if(command->else_com != nullptr) ifTree.insertChild(insertCommands(command->else_com, parameterVariables));
+        ifTree.insertChild(commandExpression(if_t->exp, parameterVariables));
+        ifTree.insertChild(insertCommands(if_t->then_com, parameterVariables));
+        if(if_t->else_com != nullptr) ifTree.insertChild(insertCommands(if_t->else_com, parameterVariables));
         return ifTree;
     }
-    static Tree commandWhile(msa::while_t *command, const variablesMap &parameterVariables){
+    static Tree commandWhile(msa::while_t *while_t, const variablesMap &parameterVariables){
         Tree whileTree{"WHILE", Yamg::User_Symbols::WHILE, Node_type::operacao};
-        whileTree.insertChild(commandExpression(command->exp, parameterVariables));
-        whileTree.insertChild(insertCommands(command->commands, parameterVariables));
+        whileTree.insertChild(commandExpression(while_t->exp, parameterVariables));
+        whileTree.insertChild(insertCommands(while_t->commands, parameterVariables));
         return whileTree;
     }
-    static Tree commandFor(msa::for_t *command, const variablesMap &parameterVariables){
+    static Tree commandFor(msa::for_t *for_t, const variablesMap &parameterVariables){
         Tree forTree{"FOR", Yamg::User_Symbols::FOR, Node_type::operacao};
-        forTree.insertChild(commandExpression(command->exp_init, parameterVariables));
-        forTree.insertChild(commandExpression(command->exp_update, parameterVariables));
-        forTree.insertChild(commandExpression(command->exp_check, parameterVariables));
-        forTree.insertChild(insertCommands(command->commands, parameterVariables));
+        forTree.insertChild(commandExpression(for_t->exp_init, parameterVariables));
+        forTree.insertChild(commandExpression(for_t->exp_check, parameterVariables));
+        forTree.insertChild(commandExpression(for_t->exp_update, parameterVariables));
+        forTree.insertChild(insertCommands(for_t->commands, parameterVariables));
         return forTree;
     }
-    static Tree commandReturn(msa::expression *command, const variablesMap &parameterVariables){
+
+    static Tree commandReturn(msa::expression *expression, const variablesMap &parameterVariables){
         Tree returnTree{"RETURN", Yamg::User_Symbols::RETURN, Node_type::operacao};
-        returnTree.insertChild(commandExpression(command, parameterVariables));
+        returnTree.insertChild(commandExpression(expression, parameterVariables));
         return returnTree;
     }
+    static Tree commandPrintf(msa::printf_t *printf_t, const variablesMap& parameterVariables) {
+        Tree printTree{"PRINTF", Yamg::User_Symbols::PRINTF, Node_type::operacao};
+        printTree.insertChild({printf_t->string, Yamg::User_Symbols::STRING, Node_type::constante});
+        if(printf_t->exp) printTree.insertChild(commandExpression(printf_t->exp, parameterVariables));
+        if(strcmp(printf_t->string, "\"%d\"") != 0) AstSymbols::Programa::insertStringLiteral(newStringLiteralName(), printf_t->string);
+        return printTree;
+    }
+    static Tree commandScanf(msa::scanf_t *scanf_t, const variablesMap& parameterVariables) {
+        Tree scanTree{"SCANF", Yamg::User_Symbols::SCANF, Node_type::operacao};
+//        scanTree.insertChild(commandExpression(scanf_t, parameterVariables));
+        scanTree.insertChild({scanf_t->var, Yamg::User_Symbols::VARIABLE, Node_type::registrador});
+//        AstSymbols::Programa::insertStringLiteral(newStringLiteralName(), scanf_t->string);
+        return scanTree;
+    }
+    static Tree commandExit(msa::expression *exit_t, const variablesMap& parameterVariables) {
+        Tree exitTree{"EXIT", Yamg::User_Symbols::EXIT, Node_type::operacao};
+        exitTree.insertChild(commandExpression(exit_t, parameterVariables));
+        return exitTree;
+    }
+
     static Tree _commandExpression(msa::expression *expression, const variablesMap &parameterVariables){
         Tree expTree{ createExpressionNode(expression, parameterVariables) };
         if(expression->left)  expTree.insertChild(commandExpression(expression->left, parameterVariables));
@@ -120,7 +147,7 @@ struct Tree::Private{
         return expTree;
     }
     static Tree commandExpression(msa::expression *expression, const variablesMap &parameterVariables) {
-        newTempRegister(true);
+        newTempRegister();
         return _commandExpression(expression, parameterVariables);
     }
 
@@ -136,9 +163,12 @@ struct Tree::Private{
                 case msa::COM_IF:     currNode->insertChild(commandIf(aux->com.if_com, parameterVariables));          break;
                 case msa::COM_FOR:    currNode->insertChild(commandFor(aux->com.for_com, parameterVariables));        break;
                 case msa::COM_EXP:    currNode->insertChild(commandExpression(aux->com.exp_com, parameterVariables)); break;
+                case msa::COM_EXIT:   currNode->insertChild(commandExit(aux->com.exit_com, parameterVariables));      break;
+                case msa::COM_SCANF:  currNode->insertChild(commandScanf(aux->com.scanf_com, parameterVariables));    break;
                 case msa::COM_WHILE:  currNode->insertChild(commandWhile(aux->com.while_com, parameterVariables));    break;
                 case msa::COM_BLOCK: *currNode = insertCommands(aux->com.block, parameterVariables);                  break;
                 case msa::COM_RETURN: currNode->insertChild(commandReturn(aux->com.return_com, parameterVariables));  break;
+                case msa::COM_PRINTF: currNode->insertChild(commandPrintf(aux->com.printf_com, parameterVariables));  break;
                 default: break;
             }
 
@@ -177,6 +207,14 @@ void Tree::readTree(AstSymbols::Funcao funcao) {
     }
 
     Tree root{ Tree::Private::insertCommands(&comandos, parameterVariables) };
+
+    if(funcao.getNome() == "main") {
+        root.map( [](TemplateTree<Tree> *t) -> void {
+            if(t->getSymbol() == (int)Yamg::User_Symbols::RETURN){
+                t->setSymbol(Yamg::User_Symbols::EXIT);
+            }
+        });
+    }
 //    std::cout << "\n" << Tree::Private::toString(root);
 
     *this = root;
@@ -191,12 +229,23 @@ Yamg::User_Symbols Tree::readUserSymbol(std::string type) {
     return result;
 }
 
-void Tree::setName(const std::string& name){
-    this->name = name;
-}
-
 Tree::Tree() {}
 
 Tree::Tree(const std::string &name, const Yamg::User_Symbols symbol, const Node_type type)
     : YamgTree<Tree, AstSymbols::Funcao> { name, symbol, type }
     {}
+
+
+std::ofstream Logger::logger_file{};
+
+void Logger::setLoggerStream(std::ofstream& stream) {
+    Logger::logger_file = std::move(stream);
+}
+
+void Logger::Log(const std::string& str, const std::string& expression) {
+    Logger::logger_file
+        << str
+        << (!expression.empty() ? " (" + expression + ")" : "")
+        << "\n";
+}
+

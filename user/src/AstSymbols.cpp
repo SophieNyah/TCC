@@ -3,7 +3,9 @@
 //
 
 #include <cstdio>
+#include <iostream>
 #include "AstSymbols.h"
+#include "lib/yamg/RegAlloc.hpp"
 
 namespace AstSymbols {
 
@@ -65,11 +67,20 @@ namespace AstSymbols {
 
     void Funcao::generateHeader(std::ofstream& out_file) {
         if(this->nome == "main") {
-            out_file << "main:\n";
+            out_file << "\n\nmain:\n";
         } else {
-            out_file << this->nome << ":\n"
+            out_file << "\n\n" << this->nome << ":\n"
                                       "subi $sp, $sp, 4\n"
                                       "sw $ra, 0($sp)\n";
+        }
+        for(std::pair<std::string, msa::Symbol> variavel: this->tabelaLocal) {
+            std::string nome_var{ variavel.first };
+            msa::Symbol simbolo = variavel.second;
+            if(simbolo.var.v.array) {
+                int arraySize = simbolo.var.v.array->length;
+                RegAlloc::newInstruction({"subi $sp, $sp, " + std::to_string(arraySize*4)}, {});
+                RegAlloc::newInstruction({"move %o, $sp"}, std::vector<Instruction::OperandType>{ {nome_var} });
+            }
         }
     }
     void Funcao::generateFooter(std::ofstream& out_file) {
@@ -136,9 +147,33 @@ namespace AstSymbols {
         return p.second;
     }
 
+    std::optional<std::string> Programa::getLiteralVar(const std::string &literal) {
+        try {
+            return Programa::string_literals.at(literal);
+        } catch(std::out_of_range const&) {
+            return std::nullopt;
+        }
+    }
+
     void Programa::generateProgramHeader(std::ofstream &out_file) {
-        out_file << ".data:\n\n";
-        // TODO: implementar variáveis globais e literais de string
-        out_file << ".text:\n\n";
+        out_file << ".data:\n";
+        for(std::pair<std::string, msa::Symbol> var: variaveis_globais) {
+            msa::Symbol symbol{ var.second };
+            if(symbol.symbol_type == msa::tipos::DECLARACAO_FUNCAO) continue;
+            switch(symbol.type.type) {
+                case msa::tipos::TIPOS_INT:
+                    out_file << symbol.id << ": .word " << symbol.var.v.value.i << "\n";
+                    break;
+                case msa::tipos::TIPOS_CHAR:
+                    out_file << symbol.id << ": .byte: \'" << symbol.var.v.value.c << " \'\n";
+                    break;
+            }
+        }
+        for(std::pair<std::string, std::string> var: string_literals) {
+            std::string var_name{ var.second };
+            std::string literal{ var.first };
+            out_file << var_name << ": .asciiz " << literal << "\n";
+        }
+        out_file << "\n.text:\n\n";
     }
 }

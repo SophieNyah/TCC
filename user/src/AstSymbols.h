@@ -66,6 +66,7 @@ namespace AstSymbols {
              * @return True caso a variável tenha sido inserida, False caso já existisse uma
              */
             static bool insertStringLiteral(const std::string name, const std::string str);
+            static std::optional<std::string> getLiteralVar(const std::string& literal);
             void generateProgramHeader(std::ofstream& out_file);
 
     };

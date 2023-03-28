@@ -346,12 +346,33 @@ namespace{
            "        }\n"
            "    }\n\n";
     }
+    int printReduceAux(BasicTree& t, int count=0){
+        if( Helper::isNonTerm(t.getName())  ||  (count==0 && t.children_size==0) ){
+            out_file_cpp << "                RuleLimit_t{ " << count << ", User_Symbols::" << t.getName() << " },\n";
+        }
+
+        for( BasicTree c: t.getChildren() ){
+            count = printReduceAux(c, count+1);
+        }
+        return count;
+    }
     void printAction(){
+        out_file_cpp << "    using RuleLimit_t = std::pair<int, User_Symbols>;\n"
+                     << "    const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap{\n";
+        for( Rule r: Helper::getRules() ){
+            out_file_cpp << "        { Rules::" << r.getName() << ",\n"
+                         << "            {\n";
+            BasicTree t{ r.getPattern() };
+            printReduceAux(t);
+            out_file_cpp << "            },\n"
+                         << "        },\n";
+        }
+        out_file_cpp << "    };\n\n";
         out_file_cpp << "    int action(Rules r, Tree &t, int subrule){\n"
                      << "        switch(r){\n";
         for( Rule r: Helper::getRules() ){
             BasicTree &pattern = r.getPattern();
-            string replace_with[2]{"t.getChildName(", ")"};
+            string replace_with[2]{"t.getChildName(", ", RulesLimitsMap.at(Rules::"+r.getName()+"))"};
             string act = findAndReplace(r.getAction(), replace_with, "\\$\\[(\\d+)\\]");
             pattern.map(
                     [&replace_with](TemplateTree<BasicTree> *t, auto findReplace) -> void {
@@ -414,30 +435,9 @@ namespace{
                         "        return true;\n"
                         "    }\n\n";
     }
-    int printReduceAux(BasicTree& t, int count=0){
-        if( Helper::isNonTerm(t.getName())  ||  (count==0 && t.children_size==0) ){
-            out_file_cpp << "                RuleLimit_t{ " << count << ", User_Symbols::" << t.getName() << " },\n";
-        }
-        
-        for( BasicTree c: t.getChildren() ){
-            count = printReduceAux(c, count+1);
-        }
-        return count;
-    }
     void printReduce(){
-        out_file_cpp << "    using RuleLimit_t = std::pair<int, User_Symbols>;\n"
-                 << "    const std::map<Rules, std::vector<RuleLimit_t>> RulesLimitsMap{\n";
-        for( Rule r: Helper::getRules() ){
-            out_file_cpp << "        { Rules::" << r.getName() << ",\n"
-                     << "            {\n";
-            BasicTree t{ r.getPattern() };
-            printReduceAux(t);
-            out_file_cpp << "            },\n"
-                     << "        },\n";
-        }
-        out_file_cpp << "    };\n\n"
 
-                        "    void _reduce(Tree&);\n"
+        out_file_cpp << "    void _reduce(Tree&);\n"
                         "    void _reduceAux(Tree& originalTree, Tree& t, std::vector<RuleLimit_t>& limit, int& count, const Rules &rule){\n"
                         "        if( !limit.empty() && count == limit.at(0).first ){\n"
                         "            limit.erase(limit.begin());\n"
