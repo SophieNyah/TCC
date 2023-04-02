@@ -44,6 +44,7 @@ struct Tree::Private{
             case msa::yytokentype::ADD:           return Tree{newTempRegister(), Yamg::User_Symbols::ADD, Node_type::operacao};
             case msa::yytokentype::SUB:           return Tree{newTempRegister(), Yamg::User_Symbols::SUB, Node_type::operacao};
             case msa::yytokentype::MUL:           return Tree{newTempRegister(), Yamg::User_Symbols::MUL, Node_type::operacao};
+            case msa::yytokentype::MOD:           return Tree{newTempRegister(), Yamg::User_Symbols::MOD, Node_type::operacao};
 
             case msa::yytokentype::INC:           return Tree{newTempRegister(), Yamg::User_Symbols::INC, Node_type::operacao};
             case msa::yytokentype::SUBSCRIPT:     return Tree{newTempRegister(), Yamg::User_Symbols::SUBSCRIPT, Node_type::operacao};
@@ -129,9 +130,7 @@ struct Tree::Private{
     }
     static Tree commandScanf(msa::scanf_t *scanf_t, const variablesMap& parameterVariables) {
         Tree scanTree{"SCANF", Yamg::User_Symbols::SCANF, Node_type::operacao};
-//        scanTree.insertChild(commandExpression(scanf_t, parameterVariables));
         scanTree.insertChild({scanf_t->var, Yamg::User_Symbols::VARIABLE, Node_type::registrador});
-//        AstSymbols::Programa::insertStringLiteral(newStringLiteralName(), scanf_t->string);
         return scanTree;
     }
     static Tree commandExit(msa::expression *exit_t, const variablesMap& parameterVariables) {
@@ -232,7 +231,8 @@ Yamg::User_Symbols Tree::readUserSymbol(std::string type) {
 Tree::Tree() {}
 
 Tree::Tree(const std::string &name, const Yamg::User_Symbols symbol, const Node_type type)
-    : YamgTree<Tree, AstSymbols::Funcao> { name, symbol, type }
+    : YamgTree<Tree, AstSymbols::Funcao> { name, symbol, type },
+    label{ "-1" }
     {}
 
 

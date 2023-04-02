@@ -19,6 +19,8 @@ class Tree: public YamgTree<Tree, AstSymbols::Funcao> {
         Node_type readNodeType(std::string) override;
         Yamg::User_Symbols readUserSymbol(std::string) override;
 
+        std::string label;
+
     private:
         Tree(const std::string &name, const Yamg::User_Symbols, const Node_type);
         struct Private;

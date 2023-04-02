@@ -5,8 +5,10 @@
 int fat(int n);
 
 int main() {
-    int n = 5;
+    int n = 0;
     int f = 0;
+    printf("Insira o número cujo fatorial será calculado: ");
+    scanf("%d", &n);
     f = fat(n);
     printf("fatorial: ");
     printf("%d", f);

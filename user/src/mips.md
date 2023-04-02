@@ -100,6 +100,11 @@ _subReg <- reg: SUB(reg,reg) {} = {
     doubleRegisterInstruction("sub", $[0], $[1], $[2]);
     Logger::Log("Sub Reg", $[1] + " - " + $[2]);
 };
+_mod <- reg: MOD(reg, reg) {} = {
+    doubleRegisterInstruction("div", $[0], $[1], $[2]);
+    RegAlloc::newInstruction({"mfhi " + $[0]}, {});
+    Logger::Log("Mod");
+};
 _mul <- reg: MUL(reg,reg) {} = {
     // doubleRegisterInstruction("mul", $[0], $[1], $[2]);
     std::string templ{ "mult " };
@@ -142,14 +147,15 @@ _subscript <- reg: SUBSCRIPT(reg, reg) {} = {
     std::string templ{"lw " + $[0] + ", "};
     if(isNonAllocable($[2])) {
         std::string subscriptor = $[2];
-        if(isNumber($[2])) {
+        if(isNumber(subscriptor)) {
             subscriptor = std::to_string(4 * std::stoi(subscriptor));
             RegAlloc::newInstruction({"li " + $[0] + ", " + subscriptor}, {});
         } else {
             RegAlloc::newInstruction({"sll " + $[0] + ", " + subscriptor + ", 2"}, {});
         }
         std::string addi = (isNumber(subscriptor) ? "i " : " ");
-        RegAlloc::newInstruction({"add " + addi + $[0] + ", %o, " + $[2]}, { {$[1]} });
+        std::string addiReg = (isNumber(subscriptor) ? $[2] : $[0]);
+        RegAlloc::newInstruction({"add " + addi + $[0] + ", %o, " + addiReg}, { {$[1]} });
         templ += "(" + $[0] + ")";
     } else {
         RegAlloc::newInstruction({"sll " + $[0] + ", %o, 2"}, { {$[2]} });
@@ -162,7 +168,7 @@ _subscript <- reg: SUBSCRIPT(reg, reg) {} = {
 
 
 _equalsConst <- reg: EQUALS(reg,CONST) {} = {
-    regConstInstruction("seq", $[0], $[1], $[2]);
+    regConstInstruction("seqi", $[0], $[1], $[2]);
     Logger::Log("Equals Const", $[1] + " == " + $[2]);
 };
 _equalsReg <- reg: EQUALS(reg,reg) {} = {
@@ -170,51 +176,53 @@ _equalsReg <- reg: EQUALS(reg,reg) {} = {
     Logger::Log("Equals", $[1] + " == " + $[2]);
 };
 _lessThanConst <- reg: LESS(reg, CONST) {} = {
-    regConstInstruction("slt", $[0], $[1], $[2]);
+    regConstInstruction("slti", $[0], $[1], $[2]);
     Logger::Log("Less Than Const", $[1] + " < " + $[2]);
 };
 _lessThan <- reg: LESS(reg, reg) {} = {
     doubleRegisterInstruction("slt", $[0], $[1], $[2]);
     Logger::Log("Less Than", $[1] + " < " + $[2]);
 };
-_leqConst <- reg: LEQ(reg, reg) {} = {
+_leqConst <- reg: LEQ(reg, CONST) {} = {
     doubleRegisterInstruction("sle", $[0], $[1], $[2]);
     Logger::Log("Leq Const", $[1] + " <= " + $[2]);
 };
-_leq <- reg: LEQ(reg, CONST) {} = {
+_leq <- reg: LEQ(reg, reg) {} = {
     regConstInstruction("sle", $[0], $[1], $[2]);
     Logger::Log("Leq", $[1] + " <= " + $[2]);
 };
 
 _if <- stmt: IF(reg, {
                          std::string index = std::to_string(labelIndex(true));
+                         $node[0].label = index;
                          RegAlloc::newInstruction({"beq "+$[1]+", $zero, if_end_"+index}, {});
                      } stmt) {} = {
-    std::string index = std::to_string(labelIndex());
+    std::string index = $node[0].label;
     RegAlloc::newInstruction({"if_end_"+index+":"}, {});
     Logger::Log("If");
 };
 _ifElse <- stmt: IF(reg, {
                         std::string index = std::to_string(labelIndex(true));
+                        $node[0].label = index;
                         RegAlloc::newInstruction({"beq "+$[1]+", $zero, if_else_"+index}, {});
                     } stmt, {
-                        std::string index = std::to_string(labelIndex());
+                        std::string index = $node[0].label;
                         RegAlloc::newInstruction({"j if_end_"+index}, {});
                         RegAlloc::newInstruction({"if_else_"+index+":"}, {});
                     }stmt) {} = {
-    std::string index = std::to_string(labelIndex());
+    std::string index = $node[0].label;
     RegAlloc::newInstruction({"if_end_"+index+":"}, {});
     Logger::Log("_ifElse");
 };
 
 _for <- stmt: FOR({
-                      std::string index = std::to_string(labelIndex(true));
-                      RegAlloc::newInstruction({"for_init_" + index + ":"}, {});
+                      $node[0].label = std::to_string(labelIndex(true));
+                      RegAlloc::newInstruction({"for_init_" + $node[0].label + ":"}, {});
                   } stmt, {
-                      std::string index = std::to_string(labelIndex());
+                      std::string index = $node[0].label;
                       RegAlloc::newInstruction({"for_check_" + index + ":"}, {});
                   } reg, {
-                      std::string index = std::to_string(labelIndex());
+                      std::string index = $node[0].label;
                       std::string templ{"beq "};
                       std::vector<Instruction::OperandType> operands{};
                       if(isNonAllocable($[2])) templ += $[2] + ", $zero, for_end_" + index;
@@ -226,12 +234,12 @@ _for <- stmt: FOR({
                       RegAlloc::newInstruction({"j for_body_" + index}, {});
                       RegAlloc::newInstruction({"for_update_" + index + ":"}, {});
                   } reg, {
-                      std::string index = std::to_string(labelIndex());
+                      std::string index = $node[0].label;
                       RegAlloc::newInstruction({"j for_check_" + index}, {});
                       RegAlloc::newInstruction({"for_body_" + index + ":"}, {});
                   } stmt) {} =
 {
-    std::string index = std::to_string(labelIndex());
+    std::string index = $node[0].label;
     RegAlloc::newInstruction({"j for_update_" + index}, {});
     RegAlloc::newInstruction({"for_end_" + index + ":"}, {});
     Logger::Log("For");
@@ -254,6 +262,12 @@ _printVar <- stmt: PRINTF(STRING, VARIABLE) {} = {
     printInstruction($[1], $[2]);
     Logger::Log("Printf", $[2]);
 };
+_scan <- stmt: SCANF(VARIABLE) {} = {
+    RegAlloc::newInstruction({"li $v0, 5"}, {});
+    RegAlloc::newInstruction({"syscall"}, {});
+    RegAlloc::newInstruction({"move %o, $v0"}, { {$[1]} });
+    Logger::Log("Scanf", $[1]);
+};
 _exit <- stmt: EXIT(CONST) {} = {
     RegAlloc::newInstruction("li $v0, 10", {});
     RegAlloc::newInstruction("li $a0, %c", {}, {$[1]});
@@ -274,7 +288,8 @@ _assignConst <- stmt: ASSIGN(reg,CONST) {} = {
                 RegAlloc::newInstruction({"sll " + tempReg + ", " + subscriptor + ", 2"}, {});
             }
             std::string addi = (isNumber(subscriptor) ? "i " : " ");
-            RegAlloc::newInstruction({"add" + addi + tempReg + ", %o, " + subscriptor}, { Instruction::OperandType{subscripted} });
+            std::string addiReg = (isNumber(subscriptor) ? subscriptor : tempReg);
+            RegAlloc::newInstruction({"add" + addi + tempReg + ", %o, " + addiReg}, { Instruction::OperandType{subscripted} });
     } else {
         RegAlloc::newInstruction({"sll " + tempReg + ", %o, 2"}, { Instruction::OperandType{subscriptor} });
         RegAlloc::newInstruction({"add " + tempReg + ", %o, %o"}, { Instruction::OperandType{subscriptor}, Instruction::OperandType{subscripted} });
@@ -303,11 +318,11 @@ _assign <- stmt: ASSIGN(reg,reg) {} = {
                 RegAlloc::newInstruction({"sll " + tempReg + ", " + subscriptor + ", 2"}, {});
             }
             std::string addi = (isNumber(subscriptor) ? "i " : " ");
-            RegAlloc::newInstruction({"add" + addi + tempReg + ", %o, " + subscriptor}, { Instruction::OperandType{subscripted} });
+            std::string addiReg = (isNumber(subscriptor) ? subscriptor : tempReg);
+            RegAlloc::newInstruction({"add" + addi + tempReg + ", %o, " + addiReg}, { Instruction::OperandType{subscripted} });
         } else {
-            Logger::Log("SLL TA AQUI PORRA");
             RegAlloc::newInstruction({"sll " + tempReg + ", %o, 2"}, { Instruction::OperandType{subscriptor} });
-            RegAlloc::newInstruction({"add " + tempReg + ", %o, %o"}, { Instruction::OperandType{subscripted}, Instruction::OperandType{subscriptor} });
+            RegAlloc::newInstruction({"add " + tempReg + ", %o, " + tempReg}, { Instruction::OperandType{subscripted} });
         }
         if(isNonAllocable($[2])) {
             RegAlloc::newInstruction({"sw " + $[2] + ", (" + tempReg + ")"}, {});
